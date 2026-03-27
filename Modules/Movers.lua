@@ -29,12 +29,12 @@ local initialized = false
 -- =====================================
 
 local FONT         = TomoCastbar_DB and TomoCastbar_DB.font or "Fonts\\FRIZQT__.TTF"
-local ACCENT       = { 0.05, 0.82, 0.62 }   -- teal TomoMod
+local ACCENT       = { 0.82, 0.71, 0.35 }   -- gold
 local BG           = { 0.04, 0.04, 0.06, 0.94 }
-local BORDER       = { 0.08, 0.25, 0.20, 1 }
-local MOVER_ACCENT = { 0.05, 0.82, 0.62 }
+local BORDER       = { 0.25, 0.24, 0.22, 1 }
+local MOVER_ACCENT = { 0.82, 0.71, 0.35 }
 local MOVER_BG     = { 0.04, 0.05, 0.05, 0.88 }
-local MOVER_BORDER = { 0.05, 0.60, 0.45, 1 }
+local MOVER_BORDER = { 0.65, 0.55, 0.25, 1 }
 local COORD_COLOR  = { 0.45, 0.45, 0.45 }
 
 -- Icônes embarquées (textures ASCII pour ne pas dépendre d'assets externes)

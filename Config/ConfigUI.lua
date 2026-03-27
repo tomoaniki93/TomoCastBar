@@ -12,8 +12,8 @@ local L = TomoCastbar_L
 local FONT      = "Fonts\\FRIZQT__.TTF"
 local FONT_BOLD = "Fonts\\FRIZQT__.TTF"
 
--- Couleurs Layout (teal — même palette que Movers.lua)
-local ACCENT_R, ACCENT_G, ACCENT_B = 0.05, 0.82, 0.62
+-- Couleurs Layout (gold — même palette que Movers.lua)
+local ACCENT_R, ACCENT_G, ACCENT_B = 0.82, 0.71, 0.35
 
 local configFrame
 local currentCategory  = nil

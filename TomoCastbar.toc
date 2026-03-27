@@ -9,7 +9,7 @@
 ## Notes-ptBR: Barra de conjuração independente. LibSharedMedia. Modo Layout.
 ## Notes-ruRU: Автономная панель заклинаний. LibSharedMedia. Режим Layout.
 ## Notes-zhCN: 独立施法条插件。LibSharedMedia。布局模式。
-## Category: |cffCC44FFTomo|r|cffFFFFFFModules|r
+## Category: |cffCC44FFTomo|r|cffFFFFFFSuite|r
 ##
 ## SavedVariables: TomoCastbarDB
 ## OptionalDeps: LibSharedMedia-3.0
