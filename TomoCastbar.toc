@@ -1,0 +1,61 @@
+## Interface: 120005, 120001, 120000
+## 
+## Title: |cffCC44FFTomo|r|cffFFFFFFCastbar|r
+## Notes: Standalone castbar addon — Player, Target, Focus. Casts, channels, empowered (Evoker). LibSharedMedia, Layout Mode.
+## Notes-frFR: Barre de cast autonome. LibSharedMedia. Mode Layout.
+## Notes-deDE: Eigenständiges Zauberstabbalken-Addon. LibSharedMedia. Layout-Modus.
+## Notes-esES: Barra de lanzamiento autónoma. LibSharedMedia. Modo Layout.
+## Notes-itIT: Barra di lancio autonoma. LibSharedMedia. Modalità Layout.
+## Notes-ptBR: Barra de conjuração independente. LibSharedMedia. Modo Layout.
+## Notes-ruRU: Автономная панель заклинаний. LibSharedMedia. Режим Layout.
+## Notes-zhCN: 独立施法条插件。LibSharedMedia。布局模式。
+## Category: |cffCC44FFTomo|r|cffFFFFFFModules|r
+##
+## SavedVariables: TomoCastbarDB
+## OptionalDeps: LibSharedMedia-3.0
+## Author: TomoAniki
+## Version: 2.0.0
+## IconTexture: Interface\Icons\Spell_Nature_Lightning
+
+## =====================
+## Libs (bundled)
+## =====================
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibSharedMedia-3.0\LibSharedMedia-3.0.lua
+
+## =====================
+## Locales (enUS first — base)
+## =====================
+Locales\enUS.lua
+Locales\frFR.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\itIT.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+
+## =====================
+## Core
+## =====================
+Core\Utils.lua
+Core\Database.lua
+
+## =====================
+## Config UI
+## =====================
+Config\Widgets.lua
+Config\ConfigUI.lua
+
+## =====================
+## Modules
+## =====================
+Modules\SparkAnimations.lua
+Modules\Castbar.lua
+Modules\Movers.lua
+
+## =====================
+## Init (last — depends on all modules)
+## =====================
+Core\Init.lua
