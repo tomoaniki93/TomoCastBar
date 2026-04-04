@@ -4,7 +4,7 @@ A lightweight, standalone castbar addon for World of Warcraft (Retail — Midnig
 
 Replaces the default Blizzard castbar with clean, fully customizable bars for **Player**, **Target**, and **Focus** units. Supports regular casts, channels, **Empowered casts** (Evoker stage markers with gradient overlays), and **channel tick markers**.
 
-![TomoCastbar](https://img.shields.io/badge/TomoCastbar-v2.0.0-d1b559?style=for-the-badge) ![WoW](https://img.shields.io/badge/WoW-Midnight-blue?style=for-the-badge) ![Interface](https://img.shields.io/badge/Interface-120001-orange?style=for-the-badge)
+![TomoCastbar](https://img.shields.io/badge/TomoCastbar-v3.0.1-d1b559?style=for-the-badge) ![WoW](https://img.shields.io/badge/WoW-Midnight-blue?style=for-the-badge) ![Interface](https://img.shields.io/badge/Interface-120001-orange?style=for-the-badge)
 
 ---
 
