@@ -59,7 +59,7 @@ L["ENABLE"]                 = "启用"
 L["SHOW_ICON"]              = "显示图标"
 L["SHOW_TIMER"]             = "显示计时器"
 L["SHOW_LATENCY"]           = "显示延迟"
-L["USE_CLASS_COLOR"]        = "职业颜色（目标/焦点）"
+L["USE_CLASS_COLOR"]        = "职业颜色"
 
 L["BACKGROUND_MODE"]        = "背景"
 L["BG_CUSTOM"]              = "自定义纹理"

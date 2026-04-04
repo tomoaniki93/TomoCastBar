@@ -451,11 +451,11 @@ function W.CreateDropdown(parent, text, options, selectedKey, yOffset, callback)
     btnText:SetTextColor(unpack(T.accent))
     btnText:SetText(currentLabel)
 
-    local arrow = btn:CreateFontString(nil, "OVERLAY")
-    arrow:SetFont(FONT, 10, "")
-    arrow:SetPoint("RIGHT", -4, 0)
-    arrow:SetTextColor(unpack(T.textDim))
-    arrow:SetText("▼")
+    local arrow = btn:CreateTexture(nil, "OVERLAY")
+    arrow:SetSize(10, 6)
+    arrow:SetPoint("RIGHT", -6, 0)
+    arrow:SetTexture("Interface\\Buttons\\Arrow-Down-Up")
+    arrow:SetVertexColor(unpack(T.textDim))
 
     -- Dropdown menu frame
     local menu = CreateFrame("Frame", nil, btn, "BackdropTemplate")

@@ -64,7 +64,7 @@ L["ENABLE"]                 = "Enable"
 L["SHOW_ICON"]              = "Show Icon"
 L["SHOW_TIMER"]             = "Show Timer"
 L["SHOW_LATENCY"]           = "Show Latency"
-L["USE_CLASS_COLOR"]        = "Class Color (Target/Focus)"
+L["USE_CLASS_COLOR"]        = "Use Class Color"
 
 -- Config — dropdowns
 L["BACKGROUND_MODE"]        = "Background"
@@ -141,3 +141,46 @@ L["btn_layout"]                  = "Layout"
 L["btn_layout_tooltip"]          = "Layout Mode — drag castbars to reposition"
 L["btn_reload_ui"]               = "Reload UI"
 L["INFO_DRAG_LAYOUT"]            = "Use the Layout button above (or /tcb layout) to drag castbars."
+
+-- [v3.0] Transitions
+L["SHOW_TRANSITIONS"]            = "Cast Transition Animations"
+
+-- [v3.0] GCD Spark
+L["SHOW_GCD_SPARK"]              = "Show GCD Spark"
+L["GCD_HEIGHT"]                  = "GCD Bar Height"
+L["GCD_COLOR"]                   = "GCD Color"
+
+-- [v3.0] School Colors
+L["USE_SCHOOL_COLOR"]            = "Spell School Colors (Player)"
+L["SCHOOL_PHYSICAL"]             = "Physical"
+L["SCHOOL_HOLY"]                 = "Holy"
+L["SCHOOL_FIRE"]                 = "Fire"
+L["SCHOOL_NATURE"]               = "Nature"
+L["SCHOOL_FROST"]                = "Frost"
+L["SCHOOL_SHADOW"]               = "Shadow"
+L["SCHOOL_ARCANE"]               = "Arcane"
+
+-- [v3.0] Icon Side
+L["ICON_SIDE"]                   = "Icon Position"
+L["ICON_LEFT"]                   = "Left"
+L["ICON_RIGHT"]                  = "Right"
+
+-- [v3.0] Interrupt Feedback
+L["SHOW_INTERRUPT_FEEDBACK"]     = "Interrupt Feedback Text"
+L["INTERRUPT_FEEDBACK_DURATION"] = "Display Duration"
+L["INTERRUPT_FEEDBACK_COLOR"]    = "Feedback Color"
+L["INTERRUPT_FEEDBACK_FONTSIZE"] = "Feedback Font Size"
+L["INTERRUPT_FEEDBACK_TEXT"]     = "Interrupted!"
+L["INTERRUPT_FEEDBACK_FULL"]     = "Interrupted! %s"
+
+-- [v3.0] Profiles
+L["PROFILE_ENABLED"]             = "Spec Profiles enabled. Current spec: %d"
+L["PROFILE_DISABLED"]            = "Spec Profiles disabled. Using global settings."
+L["PROFILE_SWITCHED"]            = "Switched to profile: %s"
+L["PROFILE_COPIED"]              = "Current settings copied to spec %d."
+L["PROFILE_STATUS"]              = "Spec Profiles: %s (active spec: %d)"
+L["PROFILE_STATUS_ON"]           = "ON"
+L["PROFILE_STATUS_OFF"]          = "OFF"
+L["HELP_PROFILE"]                = "  /tcb profile — Show profile status"
+L["HELP_PROFILE_TOGGLE"]         = "  /tcb profile on/off — Enable/disable spec profiles"
+L["HELP_PROFILE_COPY"]           = "  /tcb profile copy <1-4> — Copy current settings to spec #"

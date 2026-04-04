@@ -60,7 +60,7 @@ L["ENABLE"]                 = "Activar"
 L["SHOW_ICON"]              = "Mostrar icono"
 L["SHOW_TIMER"]             = "Mostrar temporizador"
 L["SHOW_LATENCY"]           = "Mostrar latencia"
-L["USE_CLASS_COLOR"]        = "Color de clase (Objetivo/Foco)"
+L["USE_CLASS_COLOR"]        = "Color de clase"
 
 L["BACKGROUND_MODE"]        = "Fondo"
 L["BG_CUSTOM"]              = "Textura personalizada"

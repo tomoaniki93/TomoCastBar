@@ -2,6 +2,208 @@
 
 ---
 
+## [3.0.1] — 2026-04-04
+
+### Bug Fixes
+
+#### Castbar Invisible Every Other Cast
+Fixed a race condition between the fade-out animation and new cast starts. When a cast ended, the fade-out `AnimationGroup` would play. If a new cast started before it finished, the `OnFinished` callback would still call `Hide()` — hiding the active castbar.
+
+- `CheckCast()` now stops any playing fade-out animation and resets alpha to 1 before setting up a new cast.
+- The `OnFinished` callback now checks if a cast/channel/empower is active before hiding, as a safety net.
+
+#### `ADDON_ACTION_FORBIDDEN` Error on Load
+The CLEU listener frame for spell school colors was calling `RegisterEvent()` during file load, which is a protected action. This has been removed entirely (see below).
+
+#### Spell School Colors Not Working
+`C_Spell.GetSpellInfo()` does not return a `school` field, so school-based coloring always fell back to the default red. The entire school color system has been **replaced** by extending class color support to all units.
+
+#### GCD Spark Losing Anchor After Refresh
+The GCD spark captured `playerBar` once at creation. After `RefreshAll()`, the reference was stale. Now reads `CB.castbars["player"]` dynamically, and `RefreshAll()` properly cleans up and re-creates the GCD bar.
+
+#### Dropdown Arrow Glyph Not Rendering
+The Unicode character `▼` is not supported by WoW's default font (`FRIZQT__.TTF`). Replaced with the Blizzard texture `Interface\Buttons\Arrow-Down-Up`.
+
+### Changes
+
+#### Class Color Now Applies to All Units
+`useClassColor` previously only affected target and focus bars. It now applies to **player**, **target**, and **focus** castbars. The school color system (`useSchoolColor`, `schoolColors`, CLEU listener) has been removed entirely.
+
+### Config UI — All v3.0 Features Now Exposed
+The following settings were implemented in modules but had no GUI controls. They are now fully accessible in the config panel (`/tcb`):
+
+**General panel — new sections:**
+
+| Section | Controls |
+|---|---|
+| Spark Animation | Style dropdown (Comet/Pulse/Helix/Glitch), Glow Intensity, Tail Intensity, Head/Glow/Tail color pickers |
+| Advanced | Timer Format dropdown, Spell Name Max Length slider, Class Color checkbox, Transition Animations checkbox |
+| GCD Spark | Enable checkbox, Height slider, Color picker |
+| Interrupt Feedback | Enable checkbox, Duration slider, Color picker, Font Size slider |
+
+**Per-unit panels (Player / Target / Focus):**
+
+| Control | Description |
+|---|---|
+| Icon Position | Left / Right dropdown for spell icon placement |
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `Modules/Castbar.lua` | Fixed fade-out race condition; removed school color system (CLEU frame, cache, `GetSpellSchoolColor`); `useClassColor` applies to all units; GCD spark dynamic anchoring + cleanup in `RefreshAll()` |
+| `Config/ConfigUI.lua` | Added Spark Animation, Advanced, GCD Spark, Interrupt Feedback sections to General panel; added Icon Side dropdown to unit panels; removed School Colors section |
+| `Config/Widgets.lua` | Replaced Unicode `▼` arrow with Blizzard texture in dropdown widget |
+| `Locales/enUS.lua` | Updated `USE_CLASS_COLOR` label |
+| `Locales/frFR.lua` | Updated `USE_CLASS_COLOR` label |
+
+---
+
+## [3.0.0] — 2026-04-02
+
+### New Features
+
+#### Transition Animations
+Cast completion and interruption now have smooth visual feedback instead of abrupt hide/show. All animations are driven by native `AnimationGroup` for zero-overhead rendering.
+
+| Event | Animation |
+|---|---|
+| Cast succeeded | 0.3s fade-out (ease-out) |
+| Channel / empower ended | 0.3s fade-out |
+| Cast failed | 0.3s fade-out |
+| Interrupted | Double flash pulse (0.24s) + 1s hold + fade-out |
+| Interrupt bar timeout | Fade-out instead of hard hide |
+
+New option: `showTransitions` (default: `true`). When disabled, bars hide instantly as before.
+
+#### GCD Spark
+A thin bar below the player castbar tracks the Global Cooldown in real-time.
+
+- 4px default height, same width as the player castbar, anchored directly below it.
+- Animated spark moves across the bar during GCD.
+- Uses `C_Spell.GetSpellCooldown(61304)` — Midnight-safe (no secret numbers on cooldown data).
+- Visible even when not casting — fills the gap between instant casts.
+- Options: `showGCDSpark`, `gcdHeight`, `gcdColor`.
+
+#### Spell School Colors (Player Only)
+The player castbar can now color itself based on the spell's magic school.
+
+| School | Default Color |
+|---|---|
+| Physical | Tan `(0.80, 0.70, 0.50)` |
+| Holy | Gold `(1.00, 0.90, 0.50)` |
+| Fire | Orange `(1.00, 0.50, 0.10)` |
+| Nature | Green `(0.30, 0.70, 0.20)` |
+| Frost | Blue `(0.40, 0.80, 1.00)` |
+| Shadow | Purple `(0.50, 0.30, 0.80)` |
+| Arcane | Violet `(0.70, 0.50, 1.00)` |
+
+Detection uses `C_Spell.GetSpellInfo(spellID).school` with `bit.band` fallback for composite schools. All colors are configurable in `db.schoolColors`. Option: `useSchoolColor` (default: `false`).
+
+#### Interrupt Feedback Text
+When the player successfully interrupts a target's cast, a large text appears at the center of the screen:
+
+- Format: `Interrupted! SpellName` (localized).
+- Green color, 28px THICKOUTLINE, 0.8s hold + 0.7s fade-out.
+- Only triggers when the `interrupterGUID` matches `UnitGUID("player")`.
+- Options: `showInterruptFeedback`, `interruptFeedbackDuration`, `interruptFeedbackColor`, `interruptFeedbackFontSize`.
+
+#### Configurable Icon Position
+Each unit's spell icon can now be placed on the left or right side of the castbar.
+
+- New per-unit option: `iconSide = "LEFT"` (default) or `"RIGHT"`.
+- Useful for players who position castbars near the edges of the screen.
+
+#### Named Profile System
+Full profile management inspired by TomoMod / EllesmereUI architecture.
+
+**Architecture:**
+```
+TomoCastbarDB._profiles = {
+    named        = { ["Default"] = snapshot, ... },
+    profileOrder = { "Default", ... },
+    activeProfile  = "Default",
+    specProfiles   = { [specID] = "profileName" },
+}
+```
+
+**Features:**
+- Named profiles: create, load, delete, duplicate.
+- Spec-to-profile mapping: assign any spec to any named profile.
+- Auto-save before every switch (no data loss).
+- `PLAYER_SPECIALIZATION_CHANGED` triggers automatic profile switch + `RefreshAll()` (no reload needed).
+- Snapshot/Apply pattern: profiles store a complete copy of all non-internal settings.
+- `TomoCastbar_Profiles` module with the same API surface as `TomoMod_Profiles`.
+
+**Slash Commands:**
+
+| Command | Action |
+|---|---|
+| `/tcb profile` | Show status + list all profiles |
+| `/tcb profile list` | List all profiles |
+| `/tcb profile create <name>` | Create profile from current settings |
+| `/tcb profile load <name>` | Load a named profile |
+| `/tcb profile delete <name>` | Delete a profile (not Default) |
+| `/tcb profile spec` | Show spec → profile assignments |
+| `/tcb profile spec <id> <name>` | Assign spec to profile |
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `Core/Database.lua` | New defaults (transitions, GCD, school colors, interrupt feedback, icon side); `TomoCastbar_Profiles` module (named profiles, spec mapping, snapshot/apply) |
+| `Modules/Castbar.lua` | Icon side support; school color in `ApplyBarColor`; transition `AnimationGroup`s (fade + flash); `FadeOut` / `FlashBar` helpers; interrupt feedback frame; GCD spark system; `UnitGUID` upvalue; `SCHOOL_MASK_COLORS` + `GetSpellSchoolColor` |
+| `Core/Init.lua` | `PLAYER_SPECIALIZATION_CHANGED` event; profile slash commands (`/tcb profile ...`); `TomoCastbar_Profiles.InitSpecTracking()` on login |
+| `Locales/enUS.lua` | 30 new keys (transitions, GCD, school colors, icon side, interrupt feedback, profiles) |
+| `Locales/frFR.lua` | French translations for all new keys |
+| `TomoCastbar.toc` | Version 3.0.0, updated Notes |
+
+### Upgrade Notes
+
+- **No action required** — existing SavedVariables are merged with new defaults automatically.
+- The profile system initializes with a `Default` profile containing current settings.
+- School colors default to `false` (opt-in). GCD spark and transitions default to `true`.
+- The `_profiles` key is excluded from profile snapshots to prevent recursion.
+
+---
+
+## [2.1.0] — 2026-04-02
+
+### New — Cast Target Name Display
+
+Target and focus castbars now display the name of the unit being targeted by the cast, shown directly after the spell name. This provides immediate context about who the enemy is casting on — particularly useful in PvP and dungeon scenarios.
+
+#### How it works
+
+- A new `targetText` FontString is created for **target** and **focus** castbars only (not player).
+- Anchored to the right of the spell name with a `→` separator: `Fireball → TomoAniki`.
+- The target name is retrieved via `UnitName(unitID .. "target")` on each cast start/update.
+- **No truncation** — the full target name is always displayed regardless of length.
+- Text uses a softer alpha (0.6) to visually distinguish it from the spell name without being too subtle.
+
+#### Behavior
+
+| State | Display |
+|---|---|
+| Cast with target | `Fireball → PlayerName` |
+| Cast without resolvable target | `Fireball` (no arrow, no text) |
+| Interrupted | `Interrupted (Name)` — target text cleared |
+| Preview (Layout Mode) | `Preview: target → YourName` |
+
+#### Technical Details
+
+- `UnitName()` added to local upvalues for performance.
+- `targetText` is cleared in `ResetState()`, `HidePreview()`, and on interrupt events.
+- No new SavedVariables or config options — the feature is always active on target/focus bars.
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `Modules/Castbar.lua` | Added `UnitName` upvalue; `targetText` FontString creation for target/focus; target name display in `CheckCast`; cleanup in `ResetState`, `ShowPreview`, `HidePreview` |
+
+---
+
 ## [2.0.0] — 2026-03-27
 
 ### New Features

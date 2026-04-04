@@ -1,20 +1,20 @@
 ## Interface: 120005, 120001, 120000
 ## 
 ## Title: |cffCC44FFTomo|r|cffFFFFFFCastbar|r
-## Notes: Standalone castbar addon — Player, Target, Focus. Casts, channels, empowered (Evoker). LibSharedMedia, Layout Mode.
-## Notes-frFR: Barre de cast autonome. LibSharedMedia. Mode Layout.
-## Notes-deDE: Eigenständiges Zauberstabbalken-Addon. LibSharedMedia. Layout-Modus.
-## Notes-esES: Barra de lanzamiento autónoma. LibSharedMedia. Modo Layout.
-## Notes-itIT: Barra di lancio autonoma. LibSharedMedia. Modalità Layout.
-## Notes-ptBR: Barra de conjuração independente. LibSharedMedia. Modo Layout.
-## Notes-ruRU: Автономная панель заклинаний. LibSharedMedia. Режим Layout.
-## Notes-zhCN: 独立施法条插件。LibSharedMedia。布局模式。
+## Notes: Standalone castbar addon — Player, Target, Focus. Casts, channels, empowered (Evoker). Profiles, GCD spark, school colors, transitions.
+## Notes-frFR: Barre de cast autonome. Profils, spark GCD, couleurs d'école, transitions.
+## Notes-deDE: Eigenständiges Zauberstabbalken-Addon. Profile, GCD-Spark, Schulfarben, Übergänge.
+## Notes-esES: Barra de lanzamiento autónoma. Perfiles, spark GCD, colores de escuela, transiciones.
+## Notes-itIT: Barra di lancio autonoma. Profili, spark GCD, colori scuola, transizioni.
+## Notes-ptBR: Barra de conjuração independente. Perfis, spark GCD, cores de escola, transições.
+## Notes-ruRU: Автономная панель заклинаний. Профили, GCD спарк, цвета школ, переходы.
+## Notes-zhCN: 独立施法条插件。配置文件、GCD闪烁、法术学派颜色、过渡动画。
 ## Category: |cffCC44FFTomo|r|cffFFFFFFSuite|r
 ##
 ## SavedVariables: TomoCastbarDB
 ## OptionalDeps: LibSharedMedia-3.0
 ## Author: TomoAniki
-## Version: 2.0.0
+## Version: 3.0.0
 ## IconTexture: Interface\Icons\Spell_Nature_Lightning
 
 ## =====================

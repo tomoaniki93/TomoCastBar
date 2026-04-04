@@ -23,12 +23,18 @@ local UnitChannelInfo   = UnitChannelInfo
 local UnitClass         = UnitClass
 local IsPlayerSpell     = IsPlayerSpell
 local GetNetStats       = GetNetStats
+local UnitName          = UnitName
 local UnitNameFromGUID  = UnitNameFromGUID
+local UnitGUID          = UnitGUID
 local RAID_CLASS_COLORS = RAID_CLASS_COLORS
 
 local MAX_EMPOWER_STAGES = 4
 local MAX_CHANNEL_TICKS  = 20
 local TIMER_UPDATE_FREQ  = 0.05
+
+-- =====================================
+-- =====================================
+-- (School colors removed — replaced by class color for all units)
 
 -- =====================================
 -- [LSM] LibSharedMedia-3.0
@@ -111,6 +117,60 @@ local EMPOWER_STAGE_COLORS = {
 }
 
 CB.castbars = {}
+
+-- =====================================
+-- [v3.0] INTERRUPT FEEDBACK — Texte centre écran
+-- =====================================
+local _interruptFrame = nil
+
+local function ShowInterruptFeedback(spellName)
+    local db = TomoCastbarDB
+    if not db or not db.showInterruptFeedback then return end
+
+    if not _interruptFrame then
+        _interruptFrame = CreateFrame("Frame", "TomoCastbar_InterruptFeedback", UIParent)
+        _interruptFrame:SetSize(400, 60)
+        _interruptFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 200)
+        _interruptFrame:SetFrameStrata("HIGH")
+
+        local text = _interruptFrame:CreateFontString(nil, "OVERLAY")
+        text:SetPoint("CENTER")
+        text:SetJustifyH("CENTER")
+        _interruptFrame.text = text
+
+        -- Fade-out animation
+        local ag = _interruptFrame:CreateAnimationGroup()
+        local hold = ag:CreateAnimation("Alpha")
+        hold:SetFromAlpha(1); hold:SetToAlpha(1)
+        hold:SetDuration(0.8); hold:SetOrder(1)
+        local fade = ag:CreateAnimation("Alpha")
+        fade:SetFromAlpha(1); fade:SetToAlpha(0)
+        fade:SetDuration(0.7); fade:SetSmoothing("OUT"); fade:SetOrder(2)
+        ag:SetScript("OnFinished", function()
+            _interruptFrame:SetAlpha(0); _interruptFrame:Hide()
+        end)
+        _interruptFrame._fadeAG = ag
+    end
+
+    local L = TomoCastbar_L
+    local col = db.interruptFeedbackColor or { r = 0.1, g = 0.8, b = 0.1 }
+    local fSize = db.interruptFeedbackFontSize or 28
+    local font = CB.ResolveFont(db)
+
+    _interruptFrame.text:SetFont(font, fSize, "THICKOUTLINE")
+    _interruptFrame.text:SetTextColor(col.r, col.g, col.b, 1)
+
+    if spellName and spellName ~= "" then
+        _interruptFrame.text:SetText(string_format(L["INTERRUPT_FEEDBACK_FULL"], spellName))
+    else
+        _interruptFrame.text:SetText(L["INTERRUPT_FEEDBACK_TEXT"])
+    end
+
+    _interruptFrame:SetAlpha(1)
+    _interruptFrame:Show()
+    if _interruptFrame._fadeAG:IsPlaying() then _interruptFrame._fadeAG:Stop() end
+    _interruptFrame._fadeAG:Play()
+end
 
 -- =====================================
 -- COULEUR DE CLASSE
@@ -324,13 +384,21 @@ function CB.CreateCastbar(unit)
     if unitSettings.showIcon then
         local icon = castbar:CreateTexture(nil, "OVERLAY")
         icon:SetSize(unitSettings.height, unitSettings.height)
-        icon:SetPoint("RIGHT", castbar, "LEFT", -3, 0)
         icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
         castbar.icon = icon
+
+        local side = unitSettings.iconSide or "LEFT"
+        if side == "RIGHT" then
+            icon:SetPoint("LEFT", castbar, "RIGHT", 3, 0)
+        else
+            icon:SetPoint("RIGHT", castbar, "LEFT", -3, 0)
+        end
+
         local iconBorder = CreateFrame("Frame", nil, castbar)
         iconBorder:SetPoint("TOPLEFT",     icon, "TOPLEFT",     -1,  1)
         iconBorder:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT",  1, -1)
         CreateBorder(iconBorder, db)
+        castbar.iconBorder = iconBorder
     end
 
     -- Textes
@@ -345,6 +413,45 @@ function CB.CreateCastbar(unit)
         timerText:SetFont(font, fontSize, "OUTLINE")
         timerText:SetPoint("RIGHT", -4, 0); timerText:SetTextColor(1, 1, 1, 0.9)
         castbar.timerText = timerText
+    end
+
+    -- Nom de la cible du cast (target/focus uniquement)
+    if unit == "target" or unit == "focus" then
+        local targetText = castbar:CreateFontString(nil, "OVERLAY")
+        targetText:SetFont(font, fontSize, "OUTLINE")
+        targetText:SetPoint("LEFT", spellText, "RIGHT", 4, 0)
+        targetText:SetTextColor(1, 1, 1, 0.6)
+        targetText:SetJustifyH("LEFT")
+        castbar.targetText = targetText
+    end
+
+    -- [v3.0] Transition Animations
+    do
+        -- Fade-out (succès / fin de cast)
+        local fadeAG = castbar:CreateAnimationGroup()
+        local fadeA = fadeAG:CreateAnimation("Alpha")
+        fadeA:SetFromAlpha(1); fadeA:SetToAlpha(0)
+        fadeA:SetDuration(0.3); fadeA:SetSmoothing("OUT")
+        fadeAG:SetScript("OnFinished", function()
+            castbar:SetAlpha(1)
+            -- Ne pas masquer si un nouveau cast est déjà en cours
+            if not castbar.casting and not castbar.channeling and not castbar.empowered and not castbar.failstart then
+                castbar:Hide()
+            end
+        end)
+        castbar._fadeAG = fadeAG
+
+        -- Flash (interruption sur la barre)
+        local flashAG = castbar:CreateAnimationGroup()
+        local fl1 = flashAG:CreateAnimation("Alpha")
+        fl1:SetFromAlpha(1); fl1:SetToAlpha(0.15); fl1:SetDuration(0.06); fl1:SetOrder(1)
+        local fl2 = flashAG:CreateAnimation("Alpha")
+        fl2:SetFromAlpha(0.15); fl2:SetToAlpha(1); fl2:SetDuration(0.06); fl2:SetOrder(2)
+        local fl3 = flashAG:CreateAnimation("Alpha")
+        fl3:SetFromAlpha(1); fl3:SetToAlpha(0.3); fl3:SetDuration(0.06); fl3:SetOrder(3)
+        local fl4 = flashAG:CreateAnimation("Alpha")
+        fl4:SetFromAlpha(0.3); fl4:SetToAlpha(1); fl4:SetDuration(0.06); fl4:SetOrder(4)
+        castbar._flashAG = flashAG
     end
 
     -- État
@@ -440,9 +547,29 @@ function CB.CreateCastbar(unit)
         self.numStages=0; self.duration_obj=nil; self._castStartMS=nil
         self._castEndMS=nil; self._realStartSec=nil; self._realEndSec=nil
         self._realDurationSec=nil; self._channelSpellID=nil; self._timerElapsed=0
+        self._lastSpellID = nil
         HideStageMarkers(self); HideTickMarkers(self)
-        if self.latencyTex then self.latencyTex:Hide() end
-        if self._spark     then SA.HideAll(self._spark) end
+        if self.latencyTex  then self.latencyTex:Hide() end
+        if self._spark      then SA.HideAll(self._spark) end
+        if self.targetText  then self.targetText:SetText("") end
+    end
+
+    -- [v3.0] Transition : fade-out au lieu d'un Hide() brut
+    local function FadeOut(self)
+        ResetState(self)
+        if db.showTransitions and self._fadeAG and not self._fadeAG:IsPlaying() then
+            self._fadeAG:Play()
+        else
+            self:Hide()
+        end
+    end
+
+    -- [v3.0] Flash + hold (pour les interruptions sur la barre)
+    local function FlashBar(self)
+        if db.showTransitions and self._flashAG then
+            if self._flashAG:IsPlaying() then self._flashAG:Stop() end
+            self._flashAG:Play()
+        end
     end
 
     function castbar:ShowPreview()
@@ -452,6 +579,7 @@ function CB.CreateCastbar(unit)
         local bc = self._baseColor or { 0.8, 0.1, 0.1 }
         self:SetStatusBarColor(bc[1], bc[2], bc[3], 1)
         if self.spellText then self.spellText:SetText(string_format(L["PREVIEW_CASTBAR"], self.unit)) end
+        if self.targetText then self.targetText:SetText("→ " .. (UnitName("player") or "Target")) end
         if self.timerText then self.timerText:SetText("1.5") end
         if self.icon then self.icon:SetTexture("Interface\\Icons\\Spell_Nature_Lightning") end
         if self.latencyTex then
@@ -469,8 +597,9 @@ function CB.CreateCastbar(unit)
 
     function castbar:HidePreview()
         self._preview = false
-        if self.spellText then self.spellText:SetText("") end
-        if self.timerText then self.timerText:SetText("") end
+        if self.spellText  then self.spellText:SetText("") end
+        if self.targetText then self.targetText:SetText("") end
+        if self.timerText  then self.timerText:SetText("") end
         if self.icon      then self.icon:SetTexture(nil)  end
         if self.latencyTex then self.latencyTex:Hide() end
         if self._spark    then SA.HideAll(self._spark) end
@@ -500,10 +629,11 @@ function CB.CreateCastbar(unit)
         else self.latencyTex:Hide() end
     end
 
-    local function ApplyBarColor(self, unitID)
-        if db.useClassColor and (unit == "target" or unit == "focus") then
-            local r, g, b = GetUnitClassColor(unitID)
-            if r then self:SetStatusBarColor(r, g, b, 1); self._baseColor = {r,g,b}; return end
+    local function ApplyBarColor(self, unitID, spellID)
+        if db.useClassColor then
+            local colorUnit = (unit == "player") and "player" or unitID
+            local r, g, b = GetUnitClassColor(colorUnit)
+            if r then self:SetStatusBarColor(r, g, b, 1); self._baseColor = {r, g, b}; return end
         end
         local bc = db.castbarColor; local r, g, b = 0.8, 0.1, 0.1
         if bc then r, g, b = bc.r, bc.g, bc.b end
@@ -513,6 +643,15 @@ function CB.CreateCastbar(unit)
     local function CheckCast(self, isInterrupt, interrupterGUID)
         local unitID = self.unit
         if isInterrupt then
+            -- [v3.0] Interrupt feedback — vérifie si c'est le joueur qui a interrompu
+            if (unit == "target" or unit == "focus") and interrupterGUID then
+                local playerGUID = UnitGUID("player")
+                if playerGUID and interrupterGUID == playerGUID then
+                    local lastSpellName = self.spellText and self.spellText:GetText() or ""
+                    ShowInterruptFeedback(lastSpellName)
+                end
+            end
+
             self.niOverlay:SetAlpha(0); ResetState(self)
             local intCol = db.castbarInterruptColor
             if intCol then self:SetStatusBarColor(intCol.r, intCol.g, intCol.b, 1)
@@ -523,11 +662,15 @@ function CB.CreateCastbar(unit)
                     self.spellText:SetText((INTERRUPTED or L["INTERRUPTED"]) .. " (" .. interrupterName .. ")")
                 else self.spellText:SetText(INTERRUPTED or L["INTERRUPTED"]) end
             end
+            if self.targetText then self.targetText:SetText("") end
+            FlashBar(self)
             self.failstart = GetTime(); self:SetMinMaxValues(0,100); self:SetValue(100); self:Show()
             return
         end
         if self.failstart then
-            if GetTime() - self.failstart > 1 then self.failstart = nil; self:Hide() end
+            if GetTime() - self.failstart > 1 then
+                self.failstart = nil; FadeOut(self)
+            end
             return
         end
         local info = GetSafeCastInfo(unitID, false)
@@ -542,10 +685,17 @@ function CB.CreateCastbar(unit)
         end
         if not info then ResetState(self); self:Hide(); return end
 
+        -- Stopper le fade-out si un nouveau cast arrive pendant l'animation
+        if self._fadeAG and self._fadeAG:IsPlaying() then
+            self._fadeAG:Stop()
+            self:SetAlpha(1)
+        end
+
         local duration = (bchannel or bempowered) and UnitChannelDuration(unitID) or UnitCastingDuration(unitID)
         self.duration_obj = duration
         self._castStartMS = info.startTime; self._castEndMS = info.endTime
         self._realStartSec=nil; self._realEndSec=nil; self._realDurationSec=nil
+        self._lastSpellID = info.spellID
         if duration then
             local ok, rStart, rEnd, rDur = pcall(function()
                 local rem = duration:GetRemainingDuration(0)
@@ -558,8 +708,16 @@ function CB.CreateCastbar(unit)
         self.empowered=bempowered; self.numStages=numStages
         self._channelSpellID=channelSpellID; self.failstart=nil; self._timerElapsed=0
         self:SetMinMaxValues(info.startTime, info.endTime); self:SetReverseFill(bchannel)
-        ApplyBarColor(self, unitID)
+        ApplyBarColor(self, unitID, info.spellID)
         if self.spellText then self.spellText:SetText(TruncateSpellName(info.name, db.spellNameMaxLen)) end
+        if self.targetText then
+            local castTarget = UnitName(unitID .. "target")
+            if castTarget and type(castTarget) == "string" then
+                self.targetText:SetText("→ " .. castTarget)
+            else
+                self.targetText:SetText("")
+            end
+        end
         if self.icon then self.icon:SetTexture(info.texture) end
         local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(info.notInterruptible, 1, 0)
         self.niOverlay:SetAlpha(alpha)
@@ -576,7 +734,7 @@ function CB.CreateCastbar(unit)
     castbar:SetScript("OnUpdate", function(self, elapsed)
         if self._preview then return end
         if self.failstart then
-            if GetTime() - self.failstart > 1 then self.failstart = nil; self:Hide() end
+            if GetTime() - self.failstart > 1 then self.failstart = nil; FadeOut(self) end
             return
         end
         if not self.casting and not self.channeling and not self.empowered then self:Hide(); return end
@@ -674,10 +832,10 @@ function CB.CreateCastbar(unit)
             CheckCast(castbar, true, interrupterGUID)
         elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
             if castbar.channeling or castbar.empowered then return end
-            ResetState(castbar); castbar:Hide()
+            FadeOut(castbar)
         elseif event == "UNIT_SPELLCAST_STOP" or event == "UNIT_SPELLCAST_FAILED"
             or event == "UNIT_SPELLCAST_CHANNEL_STOP" or event == "UNIT_SPELLCAST_EMPOWER_STOP" then
-            if not castbar.failstart then ResetState(castbar); castbar:Hide() end
+            if not castbar.failstart then FadeOut(castbar) end
         end
     end)
 
@@ -697,6 +855,102 @@ function CB.Initialize()
     for _, unit in ipairs({ "player", "target", "focus" }) do
         if db[unit] and db[unit].enabled then CB.CreateCastbar(unit) end
     end
+    -- [v3.0] GCD Spark
+    if db.showGCDSpark then CB.CreateGCDSpark() end
+end
+
+-- =====================================
+-- [v3.0] GCD SPARK — Mini-barre sous la player castbar
+-- =====================================
+
+function CB.CreateGCDSpark()
+    local db = TomoCastbarDB
+    if not db or not db.player or not db.player.enabled then return end
+    if CB._gcdBar then return end
+
+    local playerBar = CB.castbars["player"]
+    local unitS     = db.player
+    local gcdH      = db.gcdHeight or 4
+    local tex       = CB.ResolveBarTexture(db)
+
+    local gcd = CreateFrame("StatusBar", "TomoCastbar_GCD", UIParent)
+    gcd:SetSize(unitS.width, gcdH)
+    gcd:SetStatusBarTexture(tex)
+    gcd:GetStatusBarTexture():SetHorizTile(false)
+    gcd:SetMinMaxValues(0, 1)
+    gcd:SetValue(0)
+    gcd:SetFrameStrata("MEDIUM")
+
+    local col = db.gcdColor or { r = 1, g = 1, b = 1 }
+    gcd:SetStatusBarColor(col.r, col.g, col.b, 0.6)
+
+    -- Fond
+    local bg = gcd:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetColorTexture(0, 0, 0, 0.5)
+
+    -- Spark minimaliste
+    local spark = gcd:CreateTexture(nil, "OVERLAY")
+    spark:SetSize(2, gcdH * 1.6)
+    spark:SetColorTexture(1, 1, 1, 0.8)
+    spark:Hide()
+    gcd._spark = spark
+
+    -- Positionnement : toujours ancré sous la player castbar
+    local function AnchorGCD()
+        gcd:ClearAllPoints()
+        local bar = CB.castbars["player"]
+        if bar then
+            gcd:SetPoint("TOPLEFT", bar, "BOTTOMLEFT", 0, -2)
+            gcd:SetPoint("TOPRIGHT", bar, "BOTTOMRIGHT", 0, -2)
+        else
+            local pos = unitS.position or { point = "CENTER", relativePoint = "CENTER", x = 0, y = 0 }
+            gcd:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y - unitS.height - 4)
+        end
+    end
+    AnchorGCD()
+    gcd.AnchorGCD = AnchorGCD
+
+    -- État
+    gcd._gcdStart = 0
+    gcd._gcdDur   = 0
+    gcd._active   = false
+
+    gcd:SetScript("OnUpdate", function(self, elapsed)
+        if not self._active then return end
+        local now = GetTime()
+        local elapsed_t = now - self._gcdStart
+        if elapsed_t >= self._gcdDur then
+            self._active = false
+            self:SetValue(0)
+            self._spark:Hide()
+            self:Hide()
+            return
+        end
+        local pct = elapsed_t / self._gcdDur
+        self:SetValue(pct)
+        self._spark:ClearAllPoints()
+        self._spark:SetPoint("CENTER", self, "LEFT", self:GetWidth() * pct, 0)
+        self._spark:Show()
+    end)
+
+    -- Events
+    local evFrame = CreateFrame("Frame")
+    evFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+    evFrame:SetScript("OnEvent", function()
+        local cdInfo = C_Spell.GetSpellCooldown(61304)
+        if cdInfo and cdInfo.duration and cdInfo.duration > 0 and cdInfo.duration <= 2.0 then
+            gcd._gcdStart = cdInfo.startTime
+            gcd._gcdDur   = cdInfo.duration
+            gcd._active   = true
+            gcd:SetMinMaxValues(0, 1)
+            gcd:Show()
+        end
+    end)
+
+    gcd:EnableMouse(false)
+    gcd:Hide()
+    CB._gcdBar = gcd
 end
 
 -- =====================================
@@ -754,5 +1008,10 @@ function CB.RefreshAll()
         cb:SetScript("OnUpdate", nil); cb:Hide(); cb:SetParent(nil)
     end
     wipe(CB.castbars)
+    if CB._gcdBar then
+        CB._gcdBar:SetScript("OnUpdate", nil)
+        CB._gcdBar:Hide(); CB._gcdBar:SetParent(nil)
+        CB._gcdBar = nil
+    end
     CB.Initialize()
 end

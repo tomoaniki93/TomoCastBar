@@ -59,7 +59,7 @@ L["ENABLE"]                 = "Включить"
 L["SHOW_ICON"]              = "Показать иконку"
 L["SHOW_TIMER"]             = "Показать таймер"
 L["SHOW_LATENCY"]           = "Показать задержку"
-L["USE_CLASS_COLOR"]        = "Цвет класса (Цель/Фокус)"
+L["USE_CLASS_COLOR"]        = "Цвет класса"
 
 L["BACKGROUND_MODE"]        = "Фон"
 L["BG_CUSTOM"]              = "Своя текстура"

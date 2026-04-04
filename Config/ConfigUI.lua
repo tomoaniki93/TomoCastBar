@@ -148,6 +148,86 @@ local function BuildGeneralPanel(parent)
     end)
     y = ny
 
+    -- ===== SPARK ANIMATION =====
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateSectionHeader(c, L["HEADER_SPARK"], y)
+    y = ny
+
+    local sparkStyleOptions = {
+        { key = "Comet",  label = L["SPARK_COMET"] },
+        { key = "Pulse",  label = L["SPARK_PULSE"] },
+        { key = "Helix",  label = L["SPARK_HELIX"] },
+        { key = "Glitch", label = L["SPARK_GLITCH"] },
+    }
+    local _, ny = W.CreateDropdown(c, L["SPARK_STYLE"], sparkStyleOptions, db.sparkStyle or "Comet", y, function(key)
+        db.sparkStyle = key
+        RefreshCastbars()
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["SPARK_GLOW_ALPHA"], db.sparkGlowAlpha or 0.7, 0, 1, 0.05, y, function(v)
+        db.sparkGlowAlpha = v
+        RefreshCastbars()
+    end, "%.2f")
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["SPARK_TAIL_ALPHA"], db.sparkTailAlpha or 0.6, 0, 1, 0.05, y, function(v)
+        db.sparkTailAlpha = v
+        RefreshCastbars()
+    end, "%.2f")
+    y = ny
+
+    local _, ny = W.CreateColorPicker(c, L["SPARK_COLOR_HEAD"], db.sparkColor, y, function(r, g, b)
+        db.sparkColor.r = r; db.sparkColor.g = g; db.sparkColor.b = b
+        RefreshCastbars()
+    end)
+    y = ny
+
+    local _, ny = W.CreateColorPicker(c, L["SPARK_COLOR_GLOW"], db.sparkGlowColor, y, function(r, g, b)
+        db.sparkGlowColor.r = r; db.sparkGlowColor.g = g; db.sparkGlowColor.b = b
+        RefreshCastbars()
+    end)
+    y = ny
+
+    local _, ny = W.CreateColorPicker(c, L["SPARK_COLOR_TAIL"], db.sparkTailColor, y, function(r, g, b)
+        db.sparkTailColor.r = r; db.sparkTailColor.g = g; db.sparkTailColor.b = b
+        RefreshCastbars()
+    end)
+    y = ny
+
+    -- ===== ADVANCED =====
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateSectionHeader(c, L["HEADER_ADVANCED"], y)
+    y = ny
+
+    local timerOptions = {
+        { key = "remaining",       label = L["TIMER_REMAINING"] },
+        { key = "remaining_total", label = L["TIMER_REMAINING_TOTAL"] },
+        { key = "elapsed",         label = L["TIMER_ELAPSED"] },
+    }
+    local _, ny = W.CreateDropdown(c, L["TIMER_FORMAT"], timerOptions, db.timerFormat or "remaining", y, function(key)
+        db.timerFormat = key
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["SPELL_NAME_TRUNCATE"], db.spellNameMaxLen or 0, 0, 30, 1, y, function(v)
+        db.spellNameMaxLen = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["USE_CLASS_COLOR"], db.useClassColor, y, function(v)
+        db.useClassColor = v
+        RefreshCastbars()
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["SHOW_TRANSITIONS"], db.showTransitions, y, function(v)
+        db.showTransitions = v
+    end)
+    y = ny
+
     -- Font size
     local _, ny = W.CreateSeparator(c, y)
     y = ny
@@ -157,6 +237,56 @@ local function BuildGeneralPanel(parent)
     local _, ny = W.CreateSlider(c, L["SLIDER_FONTSIZE"], db.fontSize, 8, 24, 1, y, function(v)
         db.fontSize = v
         RefreshCastbars()
+    end)
+    y = ny
+
+    -- ===== GCD SPARK =====
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateSectionHeader(c, L["SHOW_GCD_SPARK"], y)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["SHOW_GCD_SPARK"], db.showGCDSpark, y, function(v)
+        db.showGCDSpark = v
+        RefreshCastbars()
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["GCD_HEIGHT"], db.gcdHeight or 4, 2, 12, 1, y, function(v)
+        db.gcdHeight = v
+        RefreshCastbars()
+    end)
+    y = ny
+
+    local _, ny = W.CreateColorPicker(c, L["GCD_COLOR"], db.gcdColor, y, function(r, g, b)
+        db.gcdColor.r = r; db.gcdColor.g = g; db.gcdColor.b = b
+        RefreshCastbars()
+    end)
+    y = ny
+
+    -- ===== INTERRUPT FEEDBACK =====
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateSectionHeader(c, L["SHOW_INTERRUPT_FEEDBACK"], y)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["SHOW_INTERRUPT_FEEDBACK"], db.showInterruptFeedback, y, function(v)
+        db.showInterruptFeedback = v
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["INTERRUPT_FEEDBACK_DURATION"], db.interruptFeedbackDuration or 1.5, 0.5, 5, 0.1, y, function(v)
+        db.interruptFeedbackDuration = v
+    end, "%.1f")
+    y = ny
+
+    local _, ny = W.CreateColorPicker(c, L["INTERRUPT_FEEDBACK_COLOR"], db.interruptFeedbackColor, y, function(r, g, b)
+        db.interruptFeedbackColor.r = r; db.interruptFeedbackColor.g = g; db.interruptFeedbackColor.b = b
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["INTERRUPT_FEEDBACK_FONTSIZE"], db.interruptFeedbackFontSize or 28, 12, 48, 1, y, function(v)
+        db.interruptFeedbackFontSize = v
     end)
     y = ny
 
@@ -237,6 +367,16 @@ local function BuildUnitPanel(parent, unitKey, displayName)
         end)
         y = ny
     end
+
+    local iconSideOptions = {
+        { key = "LEFT",  label = L["ICON_LEFT"] },
+        { key = "RIGHT", label = L["ICON_RIGHT"] },
+    }
+    local _, ny = W.CreateDropdown(c, L["ICON_SIDE"], iconSideOptions, unitDB.iconSide or "LEFT", y, function(key)
+        unitDB.iconSide = key
+        RefreshCastbars()
+    end)
+    y = ny
 
     local _, ny = W.CreateSeparator(c, y)
     y = ny
