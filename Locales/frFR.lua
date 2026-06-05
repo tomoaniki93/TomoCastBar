@@ -1,6 +1,9 @@
 -- =====================================
 -- frFR.lua — Locale française v2.0
 -- =====================================
+local addonLocale = GetLocale()
+if addonLocale ~= "frFR" then return end
+
 TomoCastbar_L = TomoCastbar_L or {}
 local L = TomoCastbar_L
 
@@ -166,3 +169,41 @@ L["PROFILE_STATUS_OFF"]          = "OFF"
 L["HELP_PROFILE"]                = "  /tcb profile — Afficher le statut des profils"
 L["HELP_PROFILE_TOGGLE"]         = "  /tcb profile on/off — Activer/désactiver les profils par spé"
 L["HELP_PROFILE_COPY"]           = "  /tcb profile copy <1-4> — Copier les réglages vers la spé #"
+
+-- =====================================
+-- [v3.1] Groupes Boss / Arène + UI Profils
+-- =====================================
+L["CAT_BOSS"]                   = "Boss"
+L["CAT_ARENA"]                  = "Arène"
+L["CAT_PROFILES"]               = "Profils"
+L["SUBLABEL_STACKING"]          = "Empilement"
+L["SLIDER_NUMBARS"]             = "Nombre de barres"
+L["GROWTH_DIRECTION"]           = "Sens d'empilement"
+L["GROWTH_UP"]                  = "Vers le haut"
+L["GROWTH_DOWN"]                = "Vers le bas"
+L["SLIDER_SPACING"]             = "Écart entre barres"
+L["INFO_BOSS"]                  = "Les barres de boss apparaissent pendant les rencontres. Jusqu'à 5 barres empilées (boss1-boss5)."
+L["INFO_ARENA"]                 = "Les barres d'ennemis en arène apparaissent en match d'arène. Jusqu'à 5 barres empilées (arena1-arena5)."
+L["PROFILES_DESC"]              = "Les profils enregistrent toute la configuration de TomoCastbar. Créez des configurations nommées ou chargez-en une par spécialisation."
+L["PROFILE_ACTIVE_LABEL"]       = "Profil actif : %s"
+L["PROFILE_SELECT"]             = "Profil sélectionné"
+L["PROFILE_LOAD_BTN"]           = "Charger la sélection"
+L["PROFILE_DELETE_BTN"]         = "Supprimer la sélection"
+L["HEADER_PROFILES_CREATE"]     = "Créer / Dupliquer"
+L["PROFILE_NAME_FIELD"]         = "Nom du nouveau profil"
+L["PROFILE_CREATE_BTN"]         = "Créer"
+L["PROFILE_DUPLICATE_BTN"]      = "Dupliquer la sélection"
+L["PROFILE_SPEC_HEADER"]        = "Profils par spé (auto)"
+L["PROFILE_SPEC_INFO"]          = "Associez un profil à votre spécialisation actuelle. Il se charge automatiquement au changement de spé."
+L["PROFILE_SPEC_CURRENT"]       = "Spé actuelle : %s → %s"
+L["PROFILE_SPEC_ASSIGN"]        = "Associer la spé actuelle à"
+L["PROFILE_SPEC_CLEAR"]         = "Retirer l'association"
+L["PROFILE_NONE"]               = "(aucun)"
+L["PROFILE_CREATED"]            = "Profil créé : %s"
+L["PROFILE_DELETED"]            = "Profil supprimé : %s"
+L["PROFILE_LOADED"]             = "Profil chargé : %s"
+L["PROFILE_CANNOT_DELETE"]      = "Impossible de supprimer le profil Default."
+L["PROFILE_NAME_EMPTY"]         = "Veuillez saisir un nom de profil."
+L["PROFILE_EXISTS"]             = "Un profil porte déjà ce nom."
+L["PROFILE_SPEC_ASSIGNED"]      = "Spé associée au profil : %s"
+L["PROFILE_SPEC_UNASSIGNED"]    = "Association de spé retirée."

@@ -2,6 +2,88 @@
 
 ---
 
+## [3.1.1] — 2026-06-05
+
+### Fixed — Layout Mode "Frame is not movable" on re-open
+
+Opening Layout Mode a second time (or dragging any group anchor) raised `<frame>:StartMoving(): Frame is not movable` for Player/Target/Focus castbars and for the Boss/Arena anchors.
+
+**Root cause.** The target frame was made movable only once, inside `CreateMoverFrame` (`castbar:SetMovable(true)`), which runs a single time per mover because movers are cached in `moverFrames[key]`. `HideMovers` correctly calls `SetMovable(false)` on close, but `ShowMovers` reused the cached mover and never restored `SetMovable(true)` — so the first Layout session worked, and every session after it left the target non-movable, making `StartMoving()` throw.
+
+**Fix.**
+- `ShowMovers` now calls `frame:SetMovable(true)` (and `SetClampedToScreen(true)`) on every open, for all targets — castbars and the Boss/Arena anchors alike — so movability is always restored when entering Layout Mode.
+- Added a defensive `castbar:SetMovable(true)` at the top of the mover's `OnDragStart` handler, immediately before `StartMoving()`, so the hard error can no longer surface even if some other code path toggled the flag mid-session.
+
+### Files Changed
+
+#### `Modules/Movers.lua`
+`ShowMovers` restores `SetMovable(true)`/`SetClampedToScreen(true)` on every open instead of relying on the one-time call in `CreateMoverFrame`; `OnDragStart` sets the target movable defensively before `StartMoving()`.
+
+#### `TomoCastbar.toc` · `Config/ConfigUI.lua` · `README.md`
+Version bumped to `3.1.1`.
+
+---
+
+## [3.1.0] — 2026-06-05
+
+### Added — Boss & Arena Castbars
+
+Two new castbar groups, **Boss** (`boss1`–`boss5`) and **Arena** (`arena1`–`arena5`), each rendered as a stack of bars under a single shared anchor. Both share one appearance config (width, height, icon, timer, icon side) plus group-only options: number of bars (1–5), growth direction (up/down) and inter-bar spacing.
+
+- `CB.CreateCastbar(unit, opts)` was generalised to separate the **logical key** (`unit`, used for the DB lookup and feature class) from the **real WoW unit token** (`unitID`, used for event registration, `UnitCastingInfo`/`UnitChannelInfo`, `GetUnitEmpowerStageDuration` and the frame name). For Player/Target/Focus the two are identical, so existing behaviour is unchanged.
+- New `CB.CreateUnitGroup(groupKey, prefix)` creates the shared anchor and stacks N member bars; new `CB.GetMoverTargets()` exposes the ordered drag targets to the Layout Mode.
+- Boss bars register `INSTANCE_ENCOUNTER_ENGAGE_UNIT` + `UNIT_TARGETABLE_CHANGED`; arena bars register `ARENA_OPPONENT_UPDATE`, so a cast already in progress is detected the moment the unit becomes valid.
+- The cast-target text (previously Target/Focus only) now shows on every non-player bar, so you can see who a boss or arena enemy is casting at.
+- Both groups are enabled by default but only ever appear during encounters / arena matches.
+
+### Added — Profiles Configuration Panel
+
+The profile backend (named profiles, snapshot/apply, per-spec auto-switch) already existed but was only reachable through slash commands. A full **Profiles** panel is now in the config UI (`/tcb`): active-profile display, a profile selector with Load / Delete, a name field with Create / Duplicate, and a Spec section to assign the current specialization to a profile (auto-loaded on spec change) or clear it. Boss/Arena settings are part of the snapshot, so they travel with every profile automatically.
+
+A new `W.CreateEditBox` widget (gold theme, matches the existing controls) was added to support profile naming.
+
+### Fixed
+
+#### frFR locale overrode English for every client
+`Locales/frFR.lua` was missing its locale guard. Because the TOC loads `enUS` first as the base and every other locale guards itself with `if GetLocale() ~= "XX" then return end`, the unguarded French file loaded **after** English and overwrote the string table for *all* players — an enUS/deDE/etc. client saw French text. Added the standard `frFR` guard so French only applies on a French client and other clients correctly fall back to English.
+
+#### `SetParent(nil)` crash risk on Midnight
+`CB.RefreshAll()` (both the castbar teardown and the GCD bar teardown) and `ConfigUI`'s dirty-rebuild path called `frame:SetParent(nil)`. On Midnight this can dereference a null parent and crash the client. All three sites now use `Hide()` + `ClearAllPoints()` instead, which detaches the frame visually without the unsafe reparent.
+
+#### Channel ticks on enemy units could error
+`GetChannelTicks()` indexed the tick database directly with the cast's `spellID`. On enemy units (now relevant for Boss/Arena) the `spellID` can be a *secret value*, and indexing a table with it raises an error. The lookup is now guarded with `issecretvalue()` and degrades gracefully (no ticks) when the ID is secret.
+
+#### Version numbers were inconsistent
+The TOC reported `3.0.0`, the config panel showed `v2.0.0`, and the README badge claimed `v3.0.4`. All three are now unified at **3.1.0**. The TOC `Notes` also still advertised the removed "school colors" feature; the blurbs were refreshed (all locales) to list Boss/Arena, named profiles and class colors.
+
+#### GCD cooldown query hardened
+`C_Spell.GetSpellCooldown(61304)` in the GCD spark is now wrapped in `pcall`, consistent with the rest of the addon's defensive C-API calls.
+
+### Files Changed
+
+#### `Core/Database.lua`
+Added `boss` and `arena` group defaults (enabled, width, height, showIcon, showTimer, iconSide, numBars, growth, spacing, position). No profile-backend change needed: the snapshot already copies every non-`_profiles` key, so the new groups are included automatically.
+
+#### `Modules/Castbar.lua`
+Generalised `CreateCastbar` to thread `unitID`/`settings`/anchor through `opts`; added grouped stacking with non-draggable member bars (lock stubs keep iterations safe); gated latency on the real player token and cast-target text on non-player units; registered events on `unitID` and added boss/arena appearance events; added `CreateUnitGroup`, `GetMoverTargets` and group creation in `Initialize`; hardened `GetChannelTicks` against secret spellIDs; replaced `SetParent(nil)` with `ClearAllPoints()` and added group-anchor teardown in `RefreshAll`; wrapped the GCD cooldown query in `pcall`.
+
+#### `Modules/Movers.lua`
+`ShowMovers`/`HideMovers` now iterate `CB.GetMoverTargets()` instead of a hardcoded `{player, target, focus}` list, so Boss/Arena group anchors get a mover too. The dragged target (castbar or anchor) is stored on the mover (`mf._target`) for clean preview/teardown. Added Boss/Arena entries to `UNIT_LABELS`.
+
+#### `Config/ConfigUI.lua`
+Added `BuildGroupPanel` (Boss/Arena: number of bars, growth, spacing + shared appearance, group-anchor reset) and `BuildProfilesPanel` (load/delete/create/duplicate + per-spec assignment); registered Boss, Arena and Profiles in the sidebar (7 categories); bumped the version label to `v3.1.0`; replaced `SetParent(nil)` with `ClearAllPoints()` in the dirty-rebuild path.
+
+#### `Config/Widgets.lua`
+Added `W.CreateEditBox` (styled text input) used by the Profiles panel.
+
+#### `Locales/*.lua`
+Added the `frFR` locale guard (bug fix above) and ~34 new keys for the Boss/Arena and Profiles UI across all eight locales (enUS base + frFR + deDE/esES/itIT/ptBR/ruRU/zhCN).
+
+#### `TomoCastbar.toc`
+Version → `3.1.0`; refreshed `Notes`/`Notes-XX` (removed stale "school colors", added Boss/Arena, named profiles, class colors).
+
+---
+
 ## [3.0.1] — 2026-04-04
 
 ### Bug Fixes

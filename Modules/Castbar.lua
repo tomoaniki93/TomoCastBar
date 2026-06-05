@@ -101,9 +101,12 @@ local CHANNEL_TICK_DATA = {
 local CHANNEL_TICK_MODIFIERS = { [356995] = { 1219723, 1 } }
 
 local function GetChannelTicks(spellID, durationMS)
-    if spellID and CHANNEL_TICK_DATA[spellID] then
-        local ticks = CHANNEL_TICK_DATA[spellID]
-        local mod = CHANNEL_TICK_MODIFIERS[spellID]
+    -- [v3.1] spellID peut être une valeur secrète sur unités ennemies (boss/arena).
+    -- On ne tente l'indexation de la table QUE si la valeur n'est pas secrète.
+    local safeID = spellID and (not issecretvalue or not issecretvalue(spellID)) and spellID or nil
+    if safeID and CHANNEL_TICK_DATA[safeID] then
+        local ticks = CHANNEL_TICK_DATA[safeID]
+        local mod = CHANNEL_TICK_MODIFIERS[safeID]
         if mod and IsPlayerSpell(mod[1]) then ticks = ticks + mod[2] end
         return ticks
     end
@@ -117,6 +120,7 @@ local EMPOWER_STAGE_COLORS = {
 }
 
 CB.castbars = {}
+CB.groupAnchors = {}  -- [v3.1] ancres de groupe pour boss/arena
 
 -- =====================================
 -- [v3.0] INTERRUPT FEEDBACK — Texte centre écran
@@ -256,17 +260,22 @@ end
 -- CRÉATION DE LA CASTBAR
 -- =====================================
 
-function CB.CreateCastbar(unit)
+function CB.CreateCastbar(unit, opts)
     local db = TomoCastbarDB
     if not db then return nil end
-    local unitSettings = db[unit]
+    -- [v3.1] unit = clé logique (lookup db + classe de fonctionnalités).
+    --        unitID = token WoW réel ("player"/"target"/"focus"/"boss1".."arena5").
+    --        Pour player/target/focus, unit == unitID (comportement inchangé).
+    opts = opts or {}
+    local unitID       = opts.unitID   or unit
+    local unitSettings = opts.settings or db[unit]
     if not unitSettings or not unitSettings.enabled then return nil end
 
     -- [LSM] Texture et police résolues
     local tex  = CB.ResolveBarTexture(db)
     local font = CB.ResolveFont(db)
 
-    local castbar = CreateFrame("StatusBar", "TomoCastbar_" .. unit, UIParent)
+    local castbar = CreateFrame("StatusBar", "TomoCastbar_" .. unitID, UIParent)
     castbar:SetSize(unitSettings.width, unitSettings.height)
     castbar:SetStatusBarTexture(tex)
     castbar:GetStatusBarTexture():SetHorizTile(false)
@@ -279,17 +288,36 @@ function CB.CreateCastbar(unit)
     castbar:SetStatusBarColor(baseR, baseG, baseB, 1)
     castbar._baseColor = { baseR, baseG, baseB }
 
-    local pos = unitSettings.position or { point="CENTER", relativePoint="CENTER", x=0, y=0 }
     castbar:SetParent(UIParent)
     castbar:ClearAllPoints()
-    castbar:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+    if opts.anchorFrame then
+        -- [v3.1] Barre de groupe (boss/arena) : empilée sous l'ancre commune,
+        -- pas de drag individuel (seule l'ancre est déplaçable via le Layout Mode).
+        local prev    = opts.prevBar
+        local spacing = opts.spacing or 4
+        local growth  = opts.growth or "DOWN"
+        if not prev then
+            castbar:SetPoint("TOPLEFT", opts.anchorFrame, "TOPLEFT", 0, 0)
+        elseif growth == "UP" then
+            castbar:SetPoint("BOTTOMLEFT", prev, "TOPLEFT", 0, spacing)
+        else
+            castbar:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -spacing)
+        end
+        -- Stubs lock : toute itération sur CB.castbars reste sûre.
+        castbar.isLocked = true
+        castbar.SetLocked = function(self, locked) self.isLocked = locked end
+        castbar.IsLocked  = function(self) return self.isLocked end
+    else
+        local pos = unitSettings.position or { point="CENTER", relativePoint="CENTER", x=0, y=0 }
+        castbar:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
 
-    TomoCastbar_Utils.SetupDraggable(castbar, function()
-        local point, _, relativePoint, x, y = castbar:GetPoint()
-        unitSettings.position = unitSettings.position or {}
-        unitSettings.position.point = point; unitSettings.position.relativePoint = relativePoint
-        unitSettings.position.x = x; unitSettings.position.y = y
-    end)
+        TomoCastbar_Utils.SetupDraggable(castbar, function()
+            local point, _, relativePoint, x, y = castbar:GetPoint()
+            unitSettings.position = unitSettings.position or {}
+            unitSettings.position.point = point; unitSettings.position.relativePoint = relativePoint
+            unitSettings.position.x = x; unitSettings.position.y = y
+        end)
+    end
     castbar:SetFrameStrata("MEDIUM")
 
     -- Fond
@@ -321,7 +349,7 @@ function CB.CreateCastbar(unit)
     castbar.niOverlay = niOverlay
 
     -- Latence (joueur uniquement)
-    if unit == "player" then
+    if unitID == "player" then
         local latencyTex = castbar:CreateTexture(nil, "ARTWORK", nil, 2)
         latencyTex:SetPoint("TOP",    castbar, "TOP",    0, 0)
         latencyTex:SetPoint("BOTTOM", castbar, "BOTTOM", 0, 0)
@@ -415,8 +443,8 @@ function CB.CreateCastbar(unit)
         castbar.timerText = timerText
     end
 
-    -- Nom de la cible du cast (target/focus uniquement)
-    if unit == "target" or unit == "focus" then
+    -- Nom de la cible du cast (toutes unités sauf le joueur)
+    if unitID ~= "player" then
         local targetText = castbar:CreateFontString(nil, "OVERLAY")
         targetText:SetFont(font, fontSize, "OUTLINE")
         targetText:SetPoint("LEFT", spellText, "RIGHT", 4, 0)
@@ -455,7 +483,7 @@ function CB.CreateCastbar(unit)
     end
 
     -- État
-    castbar.unit = unit; castbar.casting = false; castbar.channeling = false
+    castbar.unit = unitID; castbar.casting = false; castbar.channeling = false
     castbar.empowered = false; castbar.numStages = 0; castbar.duration_obj = nil
     castbar.failstart = nil; castbar._preview = false; castbar._castStartMS = nil
     castbar._castEndMS = nil; castbar._channelSpellID = nil; castbar._timerElapsed = 0
@@ -787,22 +815,31 @@ function CB.CreateCastbar(unit)
     -- EVENTS
     -- =====================
     local events = CreateFrame("Frame")
-    events:RegisterUnitEvent("UNIT_SPELLCAST_START",             unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_STOP",              unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_FAILED",            unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED",       unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED",         unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START",     unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP",      unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE",    unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE",     unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_START",     unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_STOP",      unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_UPDATE",    unit)
-    events:RegisterUnitEvent("UNIT_SPELLCAST_DELAYED",           unit)
-    if unit == "target" then events:RegisterEvent("PLAYER_TARGET_CHANGED")
-    elseif unit == "focus" then events:RegisterEvent("PLAYER_FOCUS_CHANGED") end
+    events:RegisterUnitEvent("UNIT_SPELLCAST_START",             unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_STOP",              unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_FAILED",            unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED",       unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED",         unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START",     unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP",      unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_UPDATE",    unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTIBLE",     unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE", unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_START",     unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_STOP",      unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_UPDATE",    unitID)
+    events:RegisterUnitEvent("UNIT_SPELLCAST_DELAYED",           unitID)
+    -- [v3.1] Événements d'apparition de l'unité → recheck d'un cast déjà en cours
+    if unitID == "target" then
+        events:RegisterEvent("PLAYER_TARGET_CHANGED")
+    elseif unitID == "focus" then
+        events:RegisterEvent("PLAYER_FOCUS_CHANGED")
+    elseif unitID:sub(1, 4) == "boss" then
+        events:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
+        events:RegisterUnitEvent("UNIT_TARGETABLE_CHANGED", unitID)
+    elseif unitID:sub(1, 5) == "arena" then
+        events:RegisterEvent("ARENA_OPPONENT_UPDATE")
+    end
     events:RegisterEvent("PLAYER_ENTERING_WORLD")
 
     -- [LSM] Callback global : on re-résout la texture si un autre addon change le global
@@ -816,7 +853,8 @@ function CB.CreateCastbar(unit)
 
     events:SetScript("OnEvent", function(self, event, eventUnit, _, _, interrupterGUID)
         if castbar._preview then return end
-        if event == "PLAYER_TARGET_CHANGED" or event == "PLAYER_FOCUS_CHANGED" or event == "PLAYER_ENTERING_WORLD" then
+        if event == "PLAYER_TARGET_CHANGED" or event == "PLAYER_FOCUS_CHANGED" or event == "PLAYER_ENTERING_WORLD"
+            or event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" or event == "ARENA_OPPONENT_UPDATE" or event == "UNIT_TARGETABLE_CHANGED" then
             castbar.failstart = nil; CheckCast(castbar, false); return
         end
         if eventUnit ~= unit then return end
@@ -841,8 +879,79 @@ function CB.CreateCastbar(unit)
 
     castbar.eventFrame = events
     castbar:EnableMouse(false)
-    CB.castbars[unit] = castbar
+    CB.castbars[unitID] = castbar
     return castbar
+end
+
+-- =====================================
+-- [v3.1] GROUPES BOSS / ARENA
+-- Une ancre commune (frame déplaçable) + N barres empilées (boss1..5 / arena1..5).
+-- =====================================
+function CB.CreateUnitGroup(groupKey, prefix)
+    local db = TomoCastbarDB
+    local gs = db and db[groupKey]
+    if not gs or not gs.enabled then return end
+
+    -- Ancre (réutilisée entre les refresh)
+    local anchor = CB.groupAnchors[groupKey]
+    if not anchor then
+        anchor = CreateFrame("Frame", "TomoCastbar_" .. groupKey .. "Anchor", UIParent)
+        CB.groupAnchors[groupKey] = anchor
+    end
+    anchor:SetSize(gs.width, gs.height)
+    anchor:SetMovable(true)
+    anchor:SetClampedToScreen(true)
+    local pos = gs.position or { point = "CENTER", relativePoint = "CENTER", x = 0, y = 0 }
+    anchor:ClearAllPoints()
+    anchor:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+    anchor:Show()
+
+    -- Barres membres
+    anchor._bars = {}
+    local count = math_min(gs.numBars or 5, 5)
+    local prev  = nil
+    for i = 1, count do
+        local bar = CB.CreateCastbar(groupKey, {
+            unitID      = prefix .. i,
+            settings    = gs,
+            anchorFrame = anchor,
+            index       = i,
+            prevBar     = prev,
+            growth      = gs.growth or "DOWN",
+            spacing     = gs.spacing or 4,
+        })
+        if bar then anchor._bars[i] = bar; prev = bar end
+    end
+
+    -- Preview Layout Mode : on relaie sur toutes les barres membres
+    anchor.ShowPreview = function()
+        for _, b in ipairs(anchor._bars) do if b.ShowPreview then b:ShowPreview() end end
+    end
+    anchor.HidePreview = function()
+        for _, b in ipairs(anchor._bars) do if b.HidePreview then b:HidePreview() end end
+    end
+end
+
+-- [v3.1] Cibles du Layout Mode : player/target/focus (castbars) + boss/arena (ancres).
+function CB.GetMoverTargets()
+    local db  = TomoCastbarDB
+    local Loc = TomoCastbar_L
+    local out = {}
+    local function label(key, fallback) return (Loc and Loc[key]) or fallback end
+
+    for _, u in ipairs({ "player", "target", "focus" }) do
+        local cb = CB.castbars[u]
+        if cb and db[u] and db[u].enabled then
+            out[#out + 1] = { key = u, frame = cb, label = label("CAT_" .. u:upper(), u) }
+        end
+    end
+    if db.boss and db.boss.enabled and CB.groupAnchors.boss then
+        out[#out + 1] = { key = "boss", frame = CB.groupAnchors.boss, label = label("CAT_BOSS", "Boss") }
+    end
+    if db.arena and db.arena.enabled and CB.groupAnchors.arena then
+        out[#out + 1] = { key = "arena", frame = CB.groupAnchors.arena, label = label("CAT_ARENA", "Arena") }
+    end
+    return out
 end
 
 -- =====================================
@@ -855,6 +964,9 @@ function CB.Initialize()
     for _, unit in ipairs({ "player", "target", "focus" }) do
         if db[unit] and db[unit].enabled then CB.CreateCastbar(unit) end
     end
+    -- [v3.1] Groupes boss / arena (n'apparaissent qu'en encounter / arène)
+    CB.CreateUnitGroup("boss", "boss")
+    CB.CreateUnitGroup("arena", "arena")
     -- [v3.0] GCD Spark
     if db.showGCDSpark then CB.CreateGCDSpark() end
 end
@@ -938,8 +1050,8 @@ function CB.CreateGCDSpark()
     local evFrame = CreateFrame("Frame")
     evFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     evFrame:SetScript("OnEvent", function()
-        local cdInfo = C_Spell.GetSpellCooldown(61304)
-        if cdInfo and cdInfo.duration and cdInfo.duration > 0 and cdInfo.duration <= 2.0 then
+        local ok, cdInfo = pcall(C_Spell.GetSpellCooldown, 61304)
+        if ok and cdInfo and cdInfo.duration and cdInfo.duration > 0 and cdInfo.duration <= 2.0 then
             gcd._gcdStart = cdInfo.startTime
             gcd._gcdDur   = cdInfo.duration
             gcd._active   = true
@@ -1005,12 +1117,20 @@ function CB.RefreshAll()
             if LSM and LSM.UnregisterCallback then LSM.UnregisterCallback(cb, "LibSharedMedia_SetGlobal") end
             cb.eventFrame:UnregisterAllEvents(); cb.eventFrame:SetScript("OnEvent", nil)
         end
-        cb:SetScript("OnUpdate", nil); cb:Hide(); cb:SetParent(nil)
+        -- [v3.1] detach sans reparent nil (evite un crash moteur sur Midnight)
+        cb:SetScript("OnUpdate", nil); cb:Hide(); cb:ClearAllPoints()
     end
     wipe(CB.castbars)
+    -- [v3.1] Ancres de groupe : masquées et vidées (re-peuplées par Initialize)
+    if CB.groupAnchors then
+        for _, anchor in pairs(CB.groupAnchors) do
+            if anchor._bars then wipe(anchor._bars) end
+            anchor:Hide(); anchor:ClearAllPoints()
+        end
+    end
     if CB._gcdBar then
         CB._gcdBar:SetScript("OnUpdate", nil)
-        CB._gcdBar:Hide(); CB._gcdBar:SetParent(nil)
+        CB._gcdBar:Hide(); CB._gcdBar:ClearAllPoints()
         CB._gcdBar = nil
     end
     CB.Initialize()

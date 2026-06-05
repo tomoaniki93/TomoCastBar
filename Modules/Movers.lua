@@ -571,6 +571,7 @@ local function CreateMoverFrame(unit, castbar, labelText)
     mf:RegisterForDrag("LeftButton")
 
     mf:SetScript("OnDragStart", function(self)
+        castbar:SetMovable(true)  -- [v3.1] garde défensive : StartMoving exige movable=true
         castbar:StartMoving()
         self:SetScript("OnUpdate", function()
             -- Resync position du mover pendant le drag
@@ -611,6 +612,7 @@ local function CreateMoverFrame(unit, castbar, labelText)
     mf:Hide()
     mf._syncToBar = SyncToBar
     mf._resetBtn  = resetBtn
+    mf._target    = castbar   -- [v3.1] castbar OU ancre de groupe (boss/arena)
 
     return mf
 end
@@ -623,6 +625,8 @@ local UNIT_LABELS = {
     player = function() return L["CAT_PLAYER"] or "Player" end,
     target = function() return L["CAT_TARGET"] or "Target" end,
     focus  = function() return L["CAT_FOCUS"]  or "Focus"  end,
+    boss   = function() return L["CAT_BOSS"]   or "Boss"   end,
+    arena  = function() return L["CAT_ARENA"]  or "Arena"  end,
 }
 
 -- =====================================
@@ -631,26 +635,33 @@ local UNIT_LABELS = {
 
 local function ShowMovers()
     local CB = TomoCastbar_Module
-    if not CB or not CB.castbars then return end
+    if not CB or not CB.castbars or not CB.GetMoverTargets then return end
 
-    for _, unit in ipairs({"player", "target", "focus"}) do
-        local castbar = CB.castbars[unit]
-        if castbar then
+    for _, entry in ipairs(CB.GetMoverTargets()) do
+        local key   = entry.key
+        local frame = entry.frame
+        local label = entry.label or key
+        if frame then
             -- Créer le mover s'il n'existe pas encore
-            if not moverFrames[unit] then
-                local labelFn = UNIT_LABELS[unit]
-                local label   = labelFn and labelFn() or unit
-                moverFrames[unit] = CreateMoverFrame(unit, castbar, label)
+            if not moverFrames[key] then
+                moverFrames[key] = CreateMoverFrame(key, frame, label)
             end
 
-            -- Resync taille (la castbar peut avoir changé de dimensions via /tcb reset)
-            local mf  = moverFrames[unit]
-            local cbW = castbar:GetWidth()
-            local cbH = castbar:GetHeight()
+            -- Resync taille (la cible peut avoir changé de dimensions)
+            local mf  = moverFrames[key]
+            local cbW = frame:GetWidth()
+            local cbH = frame:GetHeight()
             mf:SetSize(cbW, cbH + MOVER_HEADER_H)
 
-            -- Preview de la castbar
-            if castbar.ShowPreview then castbar:ShowPreview() end
+            -- [v3.1] Toujours restaurer la movabilité à l'ouverture du Layout Mode.
+            -- HideMovers appelle SetMovable(false) à la fermeture ; comme les movers
+            -- sont mis en cache, sans ceci une réouverture laisse la cible non-movable
+            -- et StartMoving() lève "Frame is not movable".
+            frame:SetMovable(true)
+            frame:SetClampedToScreen(true)
+
+            -- Preview (castbar simple, ou relais sur les barres d'un groupe)
+            if frame.ShowPreview then frame:ShowPreview() end
 
             mf._syncToBar()
             mf:Show()
@@ -659,15 +670,12 @@ local function ShowMovers()
 end
 
 local function HideMovers()
-    for unit, mf in pairs(moverFrames) do
-        local CB = TomoCastbar_Module
-        local castbar = CB and CB.castbars and CB.castbars[unit]
-
-        if castbar then
-            castbar:SetMovable(false)
-            if castbar.HidePreview then castbar:HidePreview() end
+    for _, mf in pairs(moverFrames) do
+        local target = mf._target
+        if target then
+            target:SetMovable(false)
+            if target.HidePreview then target:HidePreview() end
         end
-
         mf:Hide()
     end
 end

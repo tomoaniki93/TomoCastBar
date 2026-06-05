@@ -736,3 +736,39 @@ function W.CreateTabPanel(parent, tabs)
     wrapper.content = content
     return wrapper
 end
+
+-- =====================================
+-- [v3.1] EDIT BOX (saisie texte — noms de profils)
+-- =====================================
+
+function W.CreateEditBox(parent, labelText, yOffset)
+    local label = parent:CreateFontString(nil, "OVERLAY")
+    label:SetFont(FONT, 11, "")
+    label:SetPoint("TOPLEFT", 16, yOffset)
+    label:SetTextColor(unpack(T.text))
+    label:SetText(labelText)
+
+    local box = CreateFrame("EditBox", nil, parent, "BackdropTemplate")
+    box:SetSize((parent:GetWidth() or 440) - 48, 24)
+    box:SetPoint("TOPLEFT", 24, yOffset - 18)
+    box:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    box:SetBackdropColor(0.06, 0.06, 0.08, 1)
+    box:SetBackdropBorderColor(unpack(T.border))
+    box:SetFontObject("GameFontHighlightSmall")
+    box:SetFont(FONT, 12, "")
+    box:SetTextColor(unpack(T.text))
+    box:SetAutoFocus(false)
+    box:SetTextInsets(6, 6, 0, 0)
+    box:SetMaxLetters(32)
+
+    box:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    box:SetScript("OnEnterPressed",  function(self) self:ClearFocus() end)
+    box:SetScript("OnEditFocusGained", function(self) self:SetBackdropBorderColor(unpack(T.accent)) end)
+    box:SetScript("OnEditFocusLost",   function(self) self:SetBackdropBorderColor(unpack(T.border)) end)
+
+    return box, yOffset - 50
+end

@@ -415,15 +415,292 @@ local function BuildUnitPanel(parent, unitKey, displayName)
     return scroll
 end
 
+-- ===== BOSS / ARENA GROUP PANEL =====
+local function BuildGroupPanel(parent, groupKey, displayName)
+    local scroll = W.CreateScrollPanel(parent)
+    local c = scroll.child
+    local db = TomoCastbarDB
+    if not db or not db[groupKey] then return scroll end
+
+    local gDB = db[groupKey]
+    local y = -10
+
+    local _, ny = W.CreateSectionHeader(c, string.format(L["HEADER_UNIT_CASTBAR"], displayName), y)
+    y = ny
+
+    local infoKey = (groupKey == "boss") and "INFO_BOSS" or "INFO_ARENA"
+    local _, ny = W.CreateInfoText(c, L[infoKey] or "", y)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["ENABLE"], gDB.enabled, y, function(v)
+        gDB.enabled = v
+        RefreshCastbars()
+    end)
+    y = ny
+
+    -- Stacking
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateSubLabel(c, L["SUBLABEL_STACKING"], y)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["SLIDER_NUMBARS"], gDB.numBars or 5, 1, 5, 1, y, function(v)
+        gDB.numBars = v
+        RefreshCastbars()
+    end)
+    y = ny
+
+    local growthOptions = {
+        { key = "UP",   label = L["GROWTH_UP"] },
+        { key = "DOWN", label = L["GROWTH_DOWN"] },
+    }
+    local _, ny = W.CreateDropdown(c, L["GROWTH_DIRECTION"], growthOptions, gDB.growth or "DOWN", y, function(key)
+        gDB.growth = key
+        RefreshCastbars()
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["SLIDER_SPACING"], gDB.spacing or 4, 0, 20, 1, y, function(v)
+        gDB.spacing = v
+        RefreshCastbars()
+    end)
+    y = ny
+
+    -- Dimensions
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateSubLabel(c, L["SUBLABEL_DIMENSIONS"], y)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["SLIDER_WIDTH"], gDB.width, 80, 500, 5, y, function(v)
+        gDB.width = v
+        RefreshCastbars()
+    end)
+    y = ny
+
+    local _, ny = W.CreateSlider(c, L["SLIDER_HEIGHT"], gDB.height, 8, 50, 1, y, function(v)
+        gDB.height = v
+        RefreshCastbars()
+    end)
+    y = ny
+
+    -- Display
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateSubLabel(c, L["SUBLABEL_DISPLAY"], y)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["SHOW_ICON"], gDB.showIcon, y, function(v)
+        gDB.showIcon = v
+        RefreshCastbars()
+    end)
+    y = ny
+
+    local _, ny = W.CreateCheckbox(c, L["SHOW_TIMER"], gDB.showTimer, y, function(v)
+        gDB.showTimer = v
+        RefreshCastbars()
+    end)
+    y = ny
+
+    local iconSideOptions = {
+        { key = "LEFT",  label = L["ICON_LEFT"] },
+        { key = "RIGHT", label = L["ICON_RIGHT"] },
+    }
+    local _, ny = W.CreateDropdown(c, L["ICON_SIDE"], iconSideOptions, gDB.iconSide or "LEFT", y, function(key)
+        gDB.iconSide = key
+        RefreshCastbars()
+    end)
+    y = ny
+
+    -- Position
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateSubLabel(c, L["SUBLABEL_POSITION"], y)
+    y = ny
+    local _, ny = W.CreateInfoText(c, L["INFO_DRAG_LAYOUT"] or L["INFO_DRAG"], y)
+    y = ny
+
+    local _, ny = W.CreateButton(c, L["btn_layout"] or "Layout Mode", 200, y, function()
+        if TomoCastbar_Movers and TomoCastbar_Movers.Toggle then
+            TomoCastbar_Movers.Toggle()
+            UpdateLayoutBtnStyle()
+        end
+    end)
+    y = ny
+
+    local _, ny = W.CreateButton(c, string.format(L["RESET_POSITION"], displayName), 240, y, function()
+        if TomoCastbar_Defaults[groupKey] and TomoCastbar_Defaults[groupKey].position then
+            gDB.position = CopyTable(TomoCastbar_Defaults[groupKey].position)
+            local anchor = TomoCastbar_Module.groupAnchors and TomoCastbar_Module.groupAnchors[groupKey]
+            if anchor then
+                local pos = gDB.position
+                anchor:ClearAllPoints()
+                anchor:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+            end
+            print("|cffd1b559TomoCastbar|r " .. string.format(L["POSITION_RESET"], displayName))
+        end
+    end)
+    y = ny
+
+    c:SetHeight(math.abs(y) + 40)
+    if scroll.UpdateScroll then scroll.UpdateScroll() end
+    return scroll
+end
+
+-- ===== PROFILES PANEL =====
+local function BuildProfilesPanel(parent)
+    local scroll = W.CreateScrollPanel(parent)
+    local c = scroll.child
+    local Prof = TomoCastbar_Profiles
+    if not Prof then return scroll end
+    Prof.EnsureProfilesDB()
+
+    local y = -10
+    local selected = Prof.GetActiveProfileName()
+
+    local _, ny = W.CreateSectionHeader(c, L["CAT_PROFILES"], y)
+    y = ny
+    local _, ny = W.CreateInfoText(c, L["PROFILES_DESC"] or "", y)
+    y = ny
+    local _, ny = W.CreateSubLabel(c, string.format(L["PROFILE_ACTIVE_LABEL"], Prof.GetActiveProfileName()), y)
+    y = ny
+
+    local function profileOptions()
+        local order = Prof.GetProfileList()
+        local opts = {}
+        for _, name in ipairs(order) do opts[#opts + 1] = { key = name, label = name } end
+        return opts
+    end
+
+    local _, ny = W.CreateDropdown(c, L["PROFILE_SELECT"], profileOptions(), selected, y, function(key)
+        selected = key
+    end)
+    y = ny
+
+    local _, ny = W.CreateButton(c, L["PROFILE_LOAD_BTN"], 200, y, function()
+        if Prof.LoadNamedProfile(selected) then
+            print("|cffd1b559TomoCastbar|r " .. string.format(L["PROFILE_LOADED"], selected))
+            RefreshCastbars(); C.configDirty = true; C.Hide()
+        end
+    end)
+    y = ny
+
+    local _, ny = W.CreateButton(c, L["PROFILE_DELETE_BTN"], 200, y, function()
+        if selected == "Default" then
+            print("|cffd1b559TomoCastbar|r " .. L["PROFILE_CANNOT_DELETE"])
+            return
+        end
+        if Prof.DeleteNamedProfile(selected) then
+            print("|cffd1b559TomoCastbar|r " .. string.format(L["PROFILE_DELETED"], selected))
+            RefreshCastbars(); C.configDirty = true; C.Hide()
+        end
+    end)
+    y = ny
+
+    -- Create / Duplicate
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateSubLabel(c, L["HEADER_PROFILES_CREATE"], y)
+    y = ny
+
+    local nameBox, ny = W.CreateEditBox(c, L["PROFILE_NAME_FIELD"], y)
+    y = ny
+
+    local function readName()
+        local name = nameBox:GetText()
+        if not name or name:match("^%s*$") then
+            print("|cffd1b559TomoCastbar|r " .. L["PROFILE_NAME_EMPTY"])
+            return nil
+        end
+        name = name:match("^%s*(.-)%s*$")
+        local _, named = Prof.GetProfileList()
+        if named[name] then
+            print("|cffd1b559TomoCastbar|r " .. L["PROFILE_EXISTS"])
+            return nil
+        end
+        return name
+    end
+
+    local _, ny = W.CreateButton(c, L["PROFILE_CREATE_BTN"], 200, y, function()
+        local name = readName()
+        if name and Prof.CreateNamedProfile(name) then
+            print("|cffd1b559TomoCastbar|r " .. string.format(L["PROFILE_CREATED"], name))
+            RefreshCastbars(); C.configDirty = true; C.Hide()
+        end
+    end)
+    y = ny
+
+    local _, ny = W.CreateButton(c, L["PROFILE_DUPLICATE_BTN"], 200, y, function()
+        local name = readName()
+        if name and Prof.DuplicateProfile(selected, name) then
+            print("|cffd1b559TomoCastbar|r " .. string.format(L["PROFILE_CREATED"], name))
+            C.configDirty = true; C.Hide()
+        end
+    end)
+    y = ny
+
+    -- Spec auto-switch
+    local _, ny = W.CreateSeparator(c, y)
+    y = ny
+    local _, ny = W.CreateSectionHeader(c, L["PROFILE_SPEC_HEADER"], y)
+    y = ny
+    local _, ny = W.CreateInfoText(c, L["PROFILE_SPEC_INFO"] or "", y)
+    y = ny
+
+    local specName = "—"
+    do
+        local idx = GetSpecialization and GetSpecialization()
+        if idx then
+            local _, sName = GetSpecializationInfo(idx)
+            if sName then specName = sName end
+        end
+    end
+    local assigned = Prof.GetSpecAssignedProfile(Prof.GetCurrentSpecID()) or L["PROFILE_NONE"]
+
+    local specStatusFS, ny = W.CreateSubLabel(c, string.format(L["PROFILE_SPEC_CURRENT"], specName, assigned), y)
+    y = ny
+
+    local function refreshSpecStatus()
+        local a = Prof.GetSpecAssignedProfile(Prof.GetCurrentSpecID()) or L["PROFILE_NONE"]
+        if specStatusFS then specStatusFS:SetText(string.format(L["PROFILE_SPEC_CURRENT"], specName, a)) end
+    end
+
+    local _, ny = W.CreateDropdown(c, L["PROFILE_SPEC_ASSIGN"], profileOptions(), assigned, y, function(key)
+        local sid = Prof.GetCurrentSpecID()
+        if sid and sid ~= 0 and Prof.AssignSpecToProfile(sid, key) then
+            print("|cffd1b559TomoCastbar|r " .. string.format(L["PROFILE_SPEC_ASSIGNED"], key))
+            refreshSpecStatus()
+        end
+    end)
+    y = ny
+
+    local _, ny = W.CreateButton(c, L["PROFILE_SPEC_CLEAR"], 220, y, function()
+        local sid = Prof.GetCurrentSpecID()
+        if sid and sid ~= 0 then
+            Prof.UnassignSpec(sid)
+            print("|cffd1b559TomoCastbar|r " .. L["PROFILE_SPEC_UNASSIGNED"])
+            refreshSpecStatus()
+        end
+    end)
+    y = ny
+
+    c:SetHeight(math.abs(y) + 40)
+    if scroll.UpdateScroll then scroll.UpdateScroll() end
+    return scroll
+end
+
 -- =====================================
 -- CATEGORIES
 -- =====================================
 
 local categories = {
-    { key = "general", label = L["CAT_GENERAL"], icon = "+", builder = function(p) return BuildGeneralPanel(p) end },
-    { key = "player",  label = L["CAT_PLAYER"],  icon = "+", builder = function(p) return BuildUnitPanel(p, "player", L["CAT_PLAYER"]) end },
-    { key = "target",  label = L["CAT_TARGET"],  icon = "+", builder = function(p) return BuildUnitPanel(p, "target", L["CAT_TARGET"]) end },
-    { key = "focus",   label = L["CAT_FOCUS"],   icon = "+", builder = function(p) return BuildUnitPanel(p, "focus",  L["CAT_FOCUS"])  end },
+    { key = "general",  label = L["CAT_GENERAL"],  icon = "+", builder = function(p) return BuildGeneralPanel(p) end },
+    { key = "player",   label = L["CAT_PLAYER"],   icon = "+", builder = function(p) return BuildUnitPanel(p, "player", L["CAT_PLAYER"]) end },
+    { key = "target",   label = L["CAT_TARGET"],   icon = "+", builder = function(p) return BuildUnitPanel(p, "target", L["CAT_TARGET"]) end },
+    { key = "focus",    label = L["CAT_FOCUS"],    icon = "+", builder = function(p) return BuildUnitPanel(p, "focus",  L["CAT_FOCUS"])  end },
+    { key = "boss",     label = L["CAT_BOSS"],     icon = "+", builder = function(p) return BuildGroupPanel(p, "boss",  L["CAT_BOSS"])   end },
+    { key = "arena",    label = L["CAT_ARENA"],    icon = "+", builder = function(p) return BuildGroupPanel(p, "arena", L["CAT_ARENA"])  end },
+    { key = "profiles", label = L["CAT_PROFILES"], icon = "+", builder = function(p) return BuildProfilesPanel(p) end },
 }
 
 -- =====================================
@@ -484,7 +761,7 @@ local function CreateConfigFrame()
     versionText:SetFont(FONT, 10, "")
     versionText:SetPoint("LEFT", titleText, "RIGHT", 8, -1)
     versionText:SetTextColor(unpack(T.textDim))
-    versionText:SetText("v2.0.0")
+    versionText:SetText("v3.1.1")
 
     -- =====================================
     -- CLOSE BUTTON (×) — extrême droite
@@ -741,7 +1018,7 @@ function C.Toggle()
     if C.configDirty then
         if configFrame then
             configFrame:Hide()
-            configFrame:SetParent(nil)
+            configFrame:ClearAllPoints()  -- [v3.1] detach sans reparent nil (sûr sur Midnight)
             configFrame = nil
         end
         categoryPanels  = {}

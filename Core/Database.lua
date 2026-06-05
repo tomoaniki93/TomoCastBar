@@ -112,6 +112,34 @@ TomoCastbar_Defaults = {
         iconSide    = "LEFT",
         position    = { point = "CENTER", relativePoint = "CENTER", x = -350, y = 100 },
     },
+
+    -- [v3.1] Boss castbars — groupe (boss1..boss5 empilées sous une ancre commune)
+    boss = {
+        enabled   = true,
+        width     = 200,
+        height    = 18,
+        showIcon  = true,
+        showTimer = true,
+        iconSide  = "LEFT",
+        numBars   = 5,            -- nombre de barres affichées (1..5)
+        growth    = "DOWN",       -- "UP" | "DOWN" — sens d'empilement
+        spacing   = 4,            -- écart vertical entre les barres
+        position  = { point = "RIGHT", relativePoint = "CENTER", x = -60, y = 140 },
+    },
+
+    -- [v3.1] Arena castbars — groupe (arena1..arena5 empilées sous une ancre commune)
+    arena = {
+        enabled   = true,
+        width     = 200,
+        height    = 18,
+        showIcon  = true,
+        showTimer = true,
+        iconSide  = "RIGHT",
+        numBars   = 3,            -- 2v2/3v3/Solo Shuffle : 3 par défaut
+        growth    = "DOWN",
+        spacing   = 4,
+        position  = { point = "RIGHT", relativePoint = "CENTER", x = -60, y = -40 },
+    },
 }
 
 function TomoCastbar_InitDatabase()
