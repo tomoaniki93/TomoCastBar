@@ -1,6 +1,6 @@
 -- =====================================
 -- Widgets.lua — Custom Config UI Widgets for TomoCastbar
--- Grey & Gold theme
+-- Arcane Pulse theme
 -- =====================================
 
 TomoCastbar_Widgets = {}
@@ -10,21 +10,27 @@ local W = TomoCastbar_Widgets
 -- THEME CONSTANTS
 -- =====================================
 W.Theme = {
-    bg           = { 0.10, 0.10, 0.10, 0.97 },
-    bgLight      = { 0.16, 0.15, 0.14, 1 },
-    bgMid        = { 0.13, 0.12, 0.12, 1 },
-    accent       = { 0.82, 0.71, 0.35, 1 },         -- gold
-    accentDark   = { 0.65, 0.55, 0.25, 1 },
-    accentHover  = { 0.92, 0.80, 0.42, 1 },
-    border       = { 0.25, 0.24, 0.22, 1 },
-    borderLight  = { 0.38, 0.36, 0.32, 1 },
-    text         = { 0.88, 0.86, 0.82, 1 },
-    textDim      = { 0.55, 0.52, 0.48, 1 },
-    textHeader   = { 0.82, 0.71, 0.35, 1 },
-    red          = { 0.90, 0.20, 0.20, 1 },
-    yellow       = { 0.98, 0.82, 0.11, 1 },
+    -- Arcane Pulse — deep navy glass + ice cyan + electric violet
+    bg           = { 0.018, 0.024, 0.045, 0.985 },
+    bgLight      = { 0.055, 0.070, 0.120, 1 },
+    bgMid        = { 0.033, 0.043, 0.082, 1 },
+    surface      = { 0.026, 0.034, 0.064, 0.98 },
+    surfaceHover = { 0.060, 0.082, 0.145, 1 },
+    accent       = { 0.25, 0.78, 1.00, 1 },         -- ice cyan
+    accentDark   = { 0.12, 0.37, 0.58, 1 },
+    accentHover  = { 0.62, 0.91, 1.00, 1 },
+    violet       = { 0.52, 0.32, 1.00, 1 },
+    violetDark   = { 0.23, 0.14, 0.48, 1 },
+    border       = { 0.12, 0.18, 0.30, 1 },
+    borderLight  = { 0.28, 0.62, 0.86, 1 },
+    text         = { 0.92, 0.95, 1.00, 1 },
+    textDim      = { 0.52, 0.60, 0.72, 1 },
+    textHeader   = { 0.55, 0.86, 1.00, 1 },
+    red          = { 1.00, 0.28, 0.38, 1 },
+    yellow       = { 1.00, 0.78, 0.26, 1 },
+    green        = { 0.30, 0.95, 0.68, 1 },
     white        = { 1, 1, 1, 1 },
-    separator    = { 0.28, 0.26, 0.22, 0.6 },
+    separator    = { 0.18, 0.31, 0.48, 0.55 },
 }
 
 local T = W.Theme
@@ -44,7 +50,7 @@ end
 -- =====================================
 
 function W.CreateScrollPanel(parent)
-    local SCROLLBAR_W   = 6
+    local SCROLLBAR_W   = 7
     local SCROLLBAR_PAD = 10
     local TRACK_PAD_V   = 6
     local THUMB_MIN_H   = 24
@@ -56,7 +62,7 @@ function W.CreateScrollPanel(parent)
     track:SetWidth(SCROLLBAR_W)
     track:SetPoint("TOPRIGHT",    -4, -TRACK_PAD_V)
     track:SetPoint("BOTTOMRIGHT", -4,  TRACK_PAD_V)
-    track:SetColorTexture(0.15, 0.15, 0.18, 1)
+    track:SetColorTexture(0.035, 0.050, 0.090, 1)
 
     local thumbFrame = CreateFrame("Frame", nil, container)
     thumbFrame:SetWidth(SCROLLBAR_W)
@@ -167,19 +173,36 @@ end
 -- =====================================
 
 function W.CreateSectionHeader(parent, text, yOffset)
-    local header = parent:CreateFontString(nil, "OVERLAY")
-    header:SetFont(FONT_BOLD, 14, "")
-    header:SetPoint("TOPLEFT", 16, yOffset)
+    local card = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    card:SetPoint("TOPLEFT", 12, yOffset + 4)
+    card:SetPoint("TOPRIGHT", -12, yOffset + 4)
+    card:SetHeight(28)
+    card:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    card:SetBackdropColor(unpack(T.bgMid))
+    card:SetBackdropBorderColor(T.border[1], T.border[2], T.border[3], 0.85)
+
+    local glow = card:CreateTexture(nil, "ARTWORK")
+    glow:SetPoint("TOPLEFT", 0, 0)
+    glow:SetPoint("BOTTOMLEFT", 0, 0)
+    glow:SetWidth(3)
+    glow:SetColorTexture(unpack(T.accent))
+
+    local header = card:CreateFontString(nil, "OVERLAY")
+    header:SetFont(FONT_BOLD, 12, "")
+    header:SetPoint("LEFT", 12, 0)
     header:SetTextColor(unpack(T.textHeader))
     header:SetText(text)
 
-    local sep = parent:CreateTexture(nil, "ARTWORK")
-    sep:SetHeight(1)
-    sep:SetPoint("TOPLEFT", 16, yOffset - 20)
-    sep:SetPoint("TOPRIGHT", -16, yOffset - 20)
-    SetColor(sep, T.separator)
+    local dot = card:CreateTexture(nil, "OVERLAY")
+    dot:SetSize(4, 4)
+    dot:SetPoint("RIGHT", -10, 0)
+    dot:SetColorTexture(unpack(T.violet))
 
-    return header, yOffset - 30
+    return card, yOffset - 38
 end
 
 -- =====================================
@@ -205,7 +228,7 @@ function W.CreateCheckbox(parent, text, checked, yOffset, callback)
     frame:SetPoint("TOPLEFT", 16, yOffset)
 
     local box = CreateFrame("Button", nil, frame)
-    box:SetSize(18, 18)
+    box:SetSize(17, 17)
     box:SetPoint("LEFT", 0, 0)
 
     local bg = box:CreateTexture(nil, "BACKGROUND")
@@ -220,7 +243,7 @@ function W.CreateCheckbox(parent, text, checked, yOffset, callback)
     box.border = border
 
     local check = box:CreateTexture(nil, "OVERLAY")
-    check:SetSize(12, 12)
+    check:SetSize(9, 9)
     check:SetPoint("CENTER")
     SetColor(check, T.accent)
     box.check = check
@@ -302,7 +325,7 @@ function W.CreateSlider(parent, text, value, minVal, maxVal, step, yOffset, call
 
     local slider = CreateFrame("Slider", nil, frame, "BackdropTemplate")
     slider:SetOrientation("HORIZONTAL")
-    slider:SetSize(380, 8)
+    slider:SetSize(392, 6)
     slider:SetPoint("TOPLEFT", 0, -18)
     slider:SetMinMaxValues(minVal, maxVal)
     slider:SetValueStep(step)
@@ -315,7 +338,7 @@ function W.CreateSlider(parent, text, value, minVal, maxVal, step, yOffset, call
 
     slider:SetThumbTexture("Interface\\Buttons\\WHITE8x8")
     local thumbTex = slider:GetThumbTexture()
-    thumbTex:SetSize(12, 14)
+    thumbTex:SetSize(10, 16)
     thumbTex:SetVertexColor(unpack(T.accent))
 
     slider:SetScript("OnValueChanged", function(self, val)
@@ -549,8 +572,8 @@ function W.CreateButton(parent, text, width, yOffset, callback)
     btn:SetSize(width or 140, 28)
     btn:SetPoint("TOPLEFT", 16, yOffset)
     btn:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
-    btn:SetBackdropColor(unpack(T.accentDark))
-    btn:SetBackdropBorderColor(unpack(T.accent))
+    btn:SetBackdropColor(unpack(T.bgMid))
+    btn:SetBackdropBorderColor(unpack(T.accentDark))
 
     local label = btn:CreateFontString(nil, "OVERLAY")
     label:SetFont(FONT_BOLD, 11, "")
@@ -559,11 +582,13 @@ function W.CreateButton(parent, text, width, yOffset, callback)
     label:SetText(text)
 
     btn:SetScript("OnEnter", function()
-        btn:SetBackdropColor(unpack(T.accent))
-        label:SetTextColor(0.08, 0.08, 0.10, 1)
+        btn:SetBackdropColor(unpack(T.accentDark))
+        btn:SetBackdropBorderColor(unpack(T.accent))
+        label:SetTextColor(unpack(T.white))
     end)
     btn:SetScript("OnLeave", function()
-        btn:SetBackdropColor(unpack(T.accentDark))
+        btn:SetBackdropColor(unpack(T.bgMid))
+        btn:SetBackdropBorderColor(unpack(T.accentDark))
         label:SetTextColor(1, 1, 1, 1)
     end)
     btn:SetScript("OnClick", function()
@@ -623,7 +648,7 @@ function W.CreateTabPanel(parent, tabs)
 
     local tabBarBg = tabBar:CreateTexture(nil, "BACKGROUND")
     tabBarBg:SetAllPoints()
-    tabBarBg:SetColorTexture(0.06, 0.06, 0.08, 1)
+    tabBarBg:SetColorTexture(unpack(T.bgMid))
 
     local tabBarSep = tabBar:CreateTexture(nil, "ARTWORK")
     tabBarSep:SetHeight(1)
@@ -713,7 +738,7 @@ function W.CreateTabPanel(parent, tabs)
 
         btn:SetScript("OnEnter", function()
             if currentTab ~= tab.key then
-                bg:SetColorTexture(0.10, 0.10, 0.13, 0.5)
+                bg:SetColorTexture(T.surfaceHover[1], T.surfaceHover[2], T.surfaceHover[3], 0.55)
             end
         end)
         btn:SetScript("OnLeave", function()
@@ -756,7 +781,7 @@ function W.CreateEditBox(parent, labelText, yOffset)
         edgeFile = "Interface\\Buttons\\WHITE8x8",
         edgeSize = 1,
     })
-    box:SetBackdropColor(0.06, 0.06, 0.08, 1)
+    box:SetBackdropColor(unpack(T.bgMid))
     box:SetBackdropBorderColor(unpack(T.border))
     box:SetFontObject("GameFontHighlightSmall")
     box:SetFont(FONT, 12, "")

@@ -1,4 +1,4 @@
-## Interface: 120005, 120001, 120000
+## Interface: 120100
 ## 
 ## Title: |cffCC44FFTomo|r|cffFFFFFFCastbar|r
 ## Notes: Standalone castbar addon — Player, Target, Focus, Boss & Arena. Casts, channels, empowered (Evoker). Named profiles with spec auto-switch, GCD spark, class colors, transitions.
@@ -14,8 +14,8 @@
 ## SavedVariables: TomoCastbarDB
 ## OptionalDeps: LibSharedMedia-3.0
 ## Author: TomoAniki
-## Version: 3.1.1
-## IconTexture: Interface\Icons\Spell_Nature_Lightning
+## Version: 3.2.0
+## IconTexture: Interface\AddOns\TomoCastbar\Assets\Textures\TCB_Icon
 
 ## =====================
 ## Libs (bundled)

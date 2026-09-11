@@ -192,23 +192,35 @@ end
 -- BORDURE
 -- =====================================
 local function CreateBorder(frame, db)
-    if db and db.useCustomBorder and db.customBorderPath then
-        local border = frame:CreateTexture(nil, "OVERLAY", nil, 7)
-        border:SetTexture(db.customBorderPath)
-        border:SetPoint("TOPLEFT",     frame, "TOPLEFT",     -4,  4)
-        border:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT",  4, -4)
-        frame.customBorder = border
-        return
-    end
-    local function Edge(p1, p2, w, h)
+    -- Arcane Pulse frame: low-noise edges built from plain textures so the
+    -- result stays crisp at 1080p, 1440p, 4K and ultrawide resolutions.
+    local function Edge(r, g, b, a, p1, p2, w, h)
         local t = frame:CreateTexture(nil, "OVERLAY", nil, 7)
-        t:SetColorTexture(0, 0, 0, 1)
+        t:SetColorTexture(r, g, b, a)
         t:SetPoint(p1); t:SetPoint(p2)
         if w then t:SetWidth(w) end
         if h then t:SetHeight(h) end
+        return t
     end
-    Edge("TOPLEFT","TOPRIGHT",nil,1); Edge("BOTTOMLEFT","BOTTOMRIGHT",nil,1)
-    Edge("TOPLEFT","BOTTOMLEFT",1,nil); Edge("TOPRIGHT","BOTTOMRIGHT",1,nil)
+
+    if db and db.useCustomBorder then
+        Edge(0.12, 0.24, 0.38, 0.95, "TOPLEFT", "TOPRIGHT", nil, 1)
+        Edge(0.04, 0.08, 0.14, 1.00, "BOTTOMLEFT", "BOTTOMRIGHT", nil, 1)
+        Edge(0.08, 0.18, 0.29, 1.00, "TOPLEFT", "BOTTOMLEFT", 1, nil)
+        Edge(0.22, 0.55, 0.78, 0.90, "TOPRIGHT", "BOTTOMRIGHT", 1, nil)
+
+        local topGlow = frame:CreateTexture(nil, "OVERLAY", nil, 6)
+        topGlow:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
+        topGlow:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, -1)
+        topGlow:SetHeight(1)
+        topGlow:SetColorTexture(0.25, 0.78, 1.00, 0.22)
+        frame._arcaneTopGlow = topGlow
+    else
+        Edge(0, 0, 0, 0.95, "TOPLEFT", "TOPRIGHT", nil, 1)
+        Edge(0, 0, 0, 0.95, "BOTTOMLEFT", "BOTTOMRIGHT", nil, 1)
+        Edge(0, 0, 0, 0.95, "TOPLEFT", "BOTTOMLEFT", 1, nil)
+        Edge(0, 0, 0, 0.95, "TOPRIGHT", "BOTTOMRIGHT", 1, nil)
+    end
 end
 
 -- =====================================
@@ -320,19 +332,31 @@ function CB.CreateCastbar(unit, opts)
     end
     castbar:SetFrameStrata("MEDIUM")
 
-    -- Fond
+    -- Fond Arcane Pulse
     local bg = castbar:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
     local bgMode = db.backgroundMode or "custom"
     if bgMode == "transparent" then bg:SetColorTexture(0,0,0,0)
-    elseif bgMode == "black"   then bg:SetColorTexture(0,0,0,0.85)
+    elseif bgMode == "black"   then bg:SetColorTexture(0.004, 0.008, 0.016, 0.92)
     else
-        if db.customBackgroundPath then
-            bg:SetTexture(db.customBackgroundPath)
-            bg:SetVertexColor(0.12, 0.12, 0.15, 0.95)
-        else bg:SetColorTexture(0,0,0,0.85) end
+        bg:SetColorTexture(0.012, 0.022, 0.045, 0.96)
     end
     castbar.bg = bg
+
+    -- Glass sheen: readable but subtle even on 1080p.
+    local glassTop = castbar:CreateTexture(nil, "ARTWORK", nil, 0)
+    glassTop:SetPoint("TOPLEFT", castbar, "TOPLEFT", 1, -1)
+    glassTop:SetPoint("TOPRIGHT", castbar, "TOPRIGHT", -1, -1)
+    glassTop:SetHeight(math.max(2, math.floor(unitSettings.height * 0.42)))
+    glassTop:SetColorTexture(1, 1, 1, 0.035)
+    castbar._glassTop = glassTop
+
+    local accentPin = castbar:CreateTexture(nil, "OVERLAY", nil, 5)
+    accentPin:SetPoint("TOPLEFT", castbar, "TOPLEFT", 1, -2)
+    accentPin:SetPoint("BOTTOMLEFT", castbar, "BOTTOMLEFT", 1, 2)
+    accentPin:SetWidth(2)
+    accentPin:SetColorTexture(0.52, 0.32, 1.00, 0.90)
+    castbar._accentPin = accentPin
 
     CreateBorder(castbar, db)
 
@@ -355,7 +379,7 @@ function CB.CreateCastbar(unit, opts)
         latencyTex:SetPoint("BOTTOM", castbar, "BOTTOM", 0, 0)
         latencyTex:SetPoint("RIGHT",  castbar, "RIGHT",  0, 0)
         latencyTex:SetWidth(1); latencyTex:SetTexture(tex)
-        latencyTex:SetVertexColor(baseR*0.35, baseG*0.35, baseB*0.35, 0.85)
+        latencyTex:SetVertexColor(0.22, 0.12, 0.48, 0.72)
         latencyTex:Hide()
         castbar.latencyTex = latencyTex
     end
@@ -367,7 +391,7 @@ function CB.CreateCastbar(unit, opts)
         marker:SetWidth(2)
         marker:SetPoint("TOP",    castbar, "TOP",    0, 0)
         marker:SetPoint("BOTTOM", castbar, "BOTTOM", 0, 0)
-        marker:SetColorTexture(1, 1, 1, 0.7); marker:Hide()
+        marker:SetColorTexture(0.72, 0.92, 1.00, 0.88); marker:Hide()
         castbar.stageMarkers[i] = marker
     end
     castbar.stageOverlays = {}; castbar._stageBoundaries = {}
@@ -387,7 +411,7 @@ function CB.CreateCastbar(unit, opts)
         tick:SetWidth(1)
         tick:SetPoint("TOP",    castbar, "TOP",    0, 0)
         tick:SetPoint("BOTTOM", castbar, "BOTTOM", 0, 0)
-        tick:SetColorTexture(1, 1, 1, 0.5); tick:Hide()
+        tick:SetColorTexture(0.58, 0.86, 1.00, 0.64); tick:Hide()
         castbar.tickMarkers[i] = tick
     end
     castbar._numTicks = 0
@@ -417,9 +441,9 @@ function CB.CreateCastbar(unit, opts)
 
         local side = unitSettings.iconSide or "LEFT"
         if side == "RIGHT" then
-            icon:SetPoint("LEFT", castbar, "RIGHT", 3, 0)
+            icon:SetPoint("LEFT", castbar, "RIGHT", 5, 0)
         else
-            icon:SetPoint("RIGHT", castbar, "LEFT", -3, 0)
+            icon:SetPoint("RIGHT", castbar, "LEFT", -5, 0)
         end
 
         local iconBorder = CreateFrame("Frame", nil, castbar)
@@ -433,13 +457,13 @@ function CB.CreateCastbar(unit, opts)
     local fontSize = db.fontSize or 12
     local spellText = castbar:CreateFontString(nil, "OVERLAY")
     spellText:SetFont(font, fontSize, "OUTLINE")
-    spellText:SetPoint("LEFT", 4, 0); spellText:SetTextColor(1, 1, 1, 1)
+    spellText:SetPoint("LEFT", 7, 0); spellText:SetTextColor(0.96, 0.98, 1.00, 1)
     spellText:SetJustifyH("LEFT"); castbar.spellText = spellText
 
     if unitSettings.showTimer then
         local timerText = castbar:CreateFontString(nil, "OVERLAY")
         timerText:SetFont(font, fontSize, "OUTLINE")
-        timerText:SetPoint("RIGHT", -4, 0); timerText:SetTextColor(1, 1, 1, 0.9)
+        timerText:SetPoint("RIGHT", -7, 0); timerText:SetTextColor(0.68, 0.90, 1.00, 0.96)
         castbar.timerText = timerText
     end
 
@@ -448,7 +472,7 @@ function CB.CreateCastbar(unit, opts)
         local targetText = castbar:CreateFontString(nil, "OVERLAY")
         targetText:SetFont(font, fontSize, "OUTLINE")
         targetText:SetPoint("LEFT", spellText, "RIGHT", 4, 0)
-        targetText:SetTextColor(1, 1, 1, 0.6)
+        targetText:SetTextColor(0.72, 0.66, 1.00, 0.82)
         targetText:SetJustifyH("LEFT")
         castbar.targetText = targetText
     end
@@ -1004,7 +1028,7 @@ function CB.CreateGCDSpark()
     -- Spark minimaliste
     local spark = gcd:CreateTexture(nil, "OVERLAY")
     spark:SetSize(2, gcdH * 1.6)
-    spark:SetColorTexture(1, 1, 1, 0.8)
+    spark:SetColorTexture(0.62, 0.91, 1.00, 0.92)
     spark:Hide()
     gcd._spark = spark
 

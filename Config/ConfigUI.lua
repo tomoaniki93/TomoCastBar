@@ -12,8 +12,9 @@ local L = TomoCastbar_L
 local FONT      = "Fonts\\FRIZQT__.TTF"
 local FONT_BOLD = "Fonts\\FRIZQT__.TTF"
 
--- Couleurs Layout (gold — même palette que Movers.lua)
-local ACCENT_R, ACCENT_G, ACCENT_B = 0.82, 0.71, 0.35
+-- Arcane Pulse accents
+local ACCENT_R, ACCENT_G, ACCENT_B = 0.25, 0.78, 1.00
+local VIOLET_R, VIOLET_G, VIOLET_B = 0.52, 0.32, 1.00
 
 local configFrame
 local currentCategory  = nil
@@ -43,8 +44,8 @@ local function UpdateLayoutBtnStyle()
         _layoutBtn:SetBackdropBorderColor(ACCENT_R, ACCENT_G, ACCENT_B, 1)
         _layoutBtn._txt:SetTextColor(ACCENT_R, ACCENT_G, ACCENT_B)
     else
-        _layoutBtn:SetBackdropColor(0.06, 0.06, 0.09, 0.85)
-        _layoutBtn:SetBackdropBorderColor(0.22, 0.22, 0.26, 0.8)
+        _layoutBtn:SetBackdropColor(T.bgMid[1], T.bgMid[2], T.bgMid[3], 0.96)
+        _layoutBtn:SetBackdropBorderColor(unpack(T.border))
         _layoutBtn._txt:SetTextColor(ACCENT_R, ACCENT_G, ACCENT_B)
     end
 end
@@ -405,7 +406,7 @@ local function BuildUnitPanel(parent, unitKey, displayName)
                 cb:ClearAllPoints()
                 cb:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
             end
-            print("|cffd1b559TomoCastbar|r " .. string.format(L["POSITION_RESET"], displayName))
+            print("|cff40C7FFTomoCastbar|r " .. string.format(L["POSITION_RESET"], displayName))
         end
     end)
     y = ny
@@ -537,7 +538,7 @@ local function BuildGroupPanel(parent, groupKey, displayName)
                 anchor:ClearAllPoints()
                 anchor:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
             end
-            print("|cffd1b559TomoCastbar|r " .. string.format(L["POSITION_RESET"], displayName))
+            print("|cff40C7FFTomoCastbar|r " .. string.format(L["POSITION_RESET"], displayName))
         end
     end)
     y = ny
@@ -579,7 +580,7 @@ local function BuildProfilesPanel(parent)
 
     local _, ny = W.CreateButton(c, L["PROFILE_LOAD_BTN"], 200, y, function()
         if Prof.LoadNamedProfile(selected) then
-            print("|cffd1b559TomoCastbar|r " .. string.format(L["PROFILE_LOADED"], selected))
+            print("|cff40C7FFTomoCastbar|r " .. string.format(L["PROFILE_LOADED"], selected))
             RefreshCastbars(); C.configDirty = true; C.Hide()
         end
     end)
@@ -587,11 +588,11 @@ local function BuildProfilesPanel(parent)
 
     local _, ny = W.CreateButton(c, L["PROFILE_DELETE_BTN"], 200, y, function()
         if selected == "Default" then
-            print("|cffd1b559TomoCastbar|r " .. L["PROFILE_CANNOT_DELETE"])
+            print("|cff40C7FFTomoCastbar|r " .. L["PROFILE_CANNOT_DELETE"])
             return
         end
         if Prof.DeleteNamedProfile(selected) then
-            print("|cffd1b559TomoCastbar|r " .. string.format(L["PROFILE_DELETED"], selected))
+            print("|cff40C7FFTomoCastbar|r " .. string.format(L["PROFILE_DELETED"], selected))
             RefreshCastbars(); C.configDirty = true; C.Hide()
         end
     end)
@@ -609,13 +610,13 @@ local function BuildProfilesPanel(parent)
     local function readName()
         local name = nameBox:GetText()
         if not name or name:match("^%s*$") then
-            print("|cffd1b559TomoCastbar|r " .. L["PROFILE_NAME_EMPTY"])
+            print("|cff40C7FFTomoCastbar|r " .. L["PROFILE_NAME_EMPTY"])
             return nil
         end
         name = name:match("^%s*(.-)%s*$")
         local _, named = Prof.GetProfileList()
         if named[name] then
-            print("|cffd1b559TomoCastbar|r " .. L["PROFILE_EXISTS"])
+            print("|cff40C7FFTomoCastbar|r " .. L["PROFILE_EXISTS"])
             return nil
         end
         return name
@@ -624,7 +625,7 @@ local function BuildProfilesPanel(parent)
     local _, ny = W.CreateButton(c, L["PROFILE_CREATE_BTN"], 200, y, function()
         local name = readName()
         if name and Prof.CreateNamedProfile(name) then
-            print("|cffd1b559TomoCastbar|r " .. string.format(L["PROFILE_CREATED"], name))
+            print("|cff40C7FFTomoCastbar|r " .. string.format(L["PROFILE_CREATED"], name))
             RefreshCastbars(); C.configDirty = true; C.Hide()
         end
     end)
@@ -633,7 +634,7 @@ local function BuildProfilesPanel(parent)
     local _, ny = W.CreateButton(c, L["PROFILE_DUPLICATE_BTN"], 200, y, function()
         local name = readName()
         if name and Prof.DuplicateProfile(selected, name) then
-            print("|cffd1b559TomoCastbar|r " .. string.format(L["PROFILE_CREATED"], name))
+            print("|cff40C7FFTomoCastbar|r " .. string.format(L["PROFILE_CREATED"], name))
             C.configDirty = true; C.Hide()
         end
     end)
@@ -668,7 +669,7 @@ local function BuildProfilesPanel(parent)
     local _, ny = W.CreateDropdown(c, L["PROFILE_SPEC_ASSIGN"], profileOptions(), assigned, y, function(key)
         local sid = Prof.GetCurrentSpecID()
         if sid and sid ~= 0 and Prof.AssignSpecToProfile(sid, key) then
-            print("|cffd1b559TomoCastbar|r " .. string.format(L["PROFILE_SPEC_ASSIGNED"], key))
+            print("|cff40C7FFTomoCastbar|r " .. string.format(L["PROFILE_SPEC_ASSIGNED"], key))
             refreshSpecStatus()
         end
     end)
@@ -678,7 +679,7 @@ local function BuildProfilesPanel(parent)
         local sid = Prof.GetCurrentSpecID()
         if sid and sid ~= 0 then
             Prof.UnassignSpec(sid)
-            print("|cffd1b559TomoCastbar|r " .. L["PROFILE_SPEC_UNASSIGNED"])
+            print("|cff40C7FFTomoCastbar|r " .. L["PROFILE_SPEC_UNASSIGNED"])
             refreshSpecStatus()
         end
     end)
@@ -694,13 +695,13 @@ end
 -- =====================================
 
 local categories = {
-    { key = "general",  label = L["CAT_GENERAL"],  icon = "+", builder = function(p) return BuildGeneralPanel(p) end },
-    { key = "player",   label = L["CAT_PLAYER"],   icon = "+", builder = function(p) return BuildUnitPanel(p, "player", L["CAT_PLAYER"]) end },
-    { key = "target",   label = L["CAT_TARGET"],   icon = "+", builder = function(p) return BuildUnitPanel(p, "target", L["CAT_TARGET"]) end },
-    { key = "focus",    label = L["CAT_FOCUS"],    icon = "+", builder = function(p) return BuildUnitPanel(p, "focus",  L["CAT_FOCUS"])  end },
-    { key = "boss",     label = L["CAT_BOSS"],     icon = "+", builder = function(p) return BuildGroupPanel(p, "boss",  L["CAT_BOSS"])   end },
-    { key = "arena",    label = L["CAT_ARENA"],    icon = "+", builder = function(p) return BuildGroupPanel(p, "arena", L["CAT_ARENA"])  end },
-    { key = "profiles", label = L["CAT_PROFILES"], icon = "+", builder = function(p) return BuildProfilesPanel(p) end },
+    { key = "general",  label = L["CAT_GENERAL"],  icon = "G",  builder = function(p) return BuildGeneralPanel(p) end },
+    { key = "player",   label = L["CAT_PLAYER"],   icon = "P",  builder = function(p) return BuildUnitPanel(p, "player", L["CAT_PLAYER"]) end },
+    { key = "target",   label = L["CAT_TARGET"],   icon = "T",  builder = function(p) return BuildUnitPanel(p, "target", L["CAT_TARGET"]) end },
+    { key = "focus",    label = L["CAT_FOCUS"],    icon = "F",  builder = function(p) return BuildUnitPanel(p, "focus",  L["CAT_FOCUS"])  end },
+    { key = "boss",     label = L["CAT_BOSS"],     icon = "B",  builder = function(p) return BuildGroupPanel(p, "boss",  L["CAT_BOSS"])   end },
+    { key = "arena",    label = L["CAT_ARENA"],    icon = "A",  builder = function(p) return BuildGroupPanel(p, "arena", L["CAT_ARENA"])  end },
+    { key = "profiles", label = L["CAT_PROFILES"], icon = "PR", builder = function(p) return BuildProfilesPanel(p) end },
 }
 
 -- =====================================
@@ -711,7 +712,7 @@ local function CreateConfigFrame()
     if configFrame then return end
 
     configFrame = CreateFrame("Frame", "TomoCastbarConfigFrame", UIParent, "BackdropTemplate")
-    configFrame:SetSize(620, 680)
+    configFrame:SetSize(760, 720)
     configFrame:SetPoint("CENTER")
     configFrame:SetFrameStrata("HIGH")
     configFrame:SetBackdrop({
@@ -720,7 +721,7 @@ local function CreateConfigFrame()
         edgeSize = 2,
     })
     configFrame:SetBackdropColor(unpack(T.bg))
-    configFrame:SetBackdropBorderColor(unpack(T.border))
+    configFrame:SetBackdropBorderColor(0.18, 0.46, 0.68, 0.95)
     configFrame:SetMovable(true)
     configFrame:SetClampedToScreen(true)
     configFrame:EnableMouse(true)
@@ -734,7 +735,7 @@ local function CreateConfigFrame()
     -- =====================================
     -- TITLE BAR
     -- =====================================
-    local TITLE_H = 44
+    local TITLE_H = 58
 
     local titleBar = CreateFrame("Frame", nil, configFrame)
     titleBar:SetSize(configFrame:GetWidth(), TITLE_H)
@@ -742,26 +743,39 @@ local function CreateConfigFrame()
 
     local titleBg = titleBar:CreateTexture(nil, "BACKGROUND")
     titleBg:SetAllPoints()
-    titleBg:SetColorTexture(0.06, 0.06, 0.08, 1)
+    titleBg:SetColorTexture(0.014, 0.020, 0.041, 1)
 
     -- Accent line (top — même que Movers header)
     local accentLine = titleBar:CreateTexture(nil, "OVERLAY")
     accentLine:SetHeight(2)
     accentLine:SetPoint("TOPLEFT",  0, 0)
     accentLine:SetPoint("TOPRIGHT", 0, 0)
-    accentLine:SetColorTexture(ACCENT_R, ACCENT_G, ACCENT_B, 0.7)
+    accentLine:SetColorTexture(ACCENT_R, ACCENT_G, ACCENT_B, 0.95)
 
-    -- Titre + version (gauche)
+    -- Logo + identité Arcane Pulse
+    local titleLogo = titleBar:CreateTexture(nil, "ARTWORK")
+    titleLogo:SetSize(42, 42)
+    titleLogo:SetPoint("LEFT", 14, 0)
+    titleLogo:SetTexture("Interface\\AddOns\\TomoCastbar\\Assets\\Textures\\TCB_Icon")
+
     local titleText = titleBar:CreateFontString(nil, "OVERLAY")
-    titleText:SetFont(FONT_BOLD, 15, "")
-    titleText:SetPoint("LEFT", 16, 0)
+    titleText:SetFont(FONT_BOLD, 16, "")
+    titleText:SetPoint("TOPLEFT", titleLogo, "TOPRIGHT", 10, -3)
     titleText:SetText(L["CONFIG_TITLE"])
+    titleText:SetTextColor(0.94, 0.97, 1.00, 1)
+
+    local subtitle = titleBar:CreateFontString(nil, "OVERLAY")
+    subtitle:SetFont(FONT, 9, "")
+    subtitle:SetPoint("TOPLEFT", titleText, "BOTTOMLEFT", 0, -4)
+    subtitle:SetText("ARCANE PULSE  /  CAST HUD")
+    subtitle:SetTextColor(ACCENT_R, ACCENT_G, ACCENT_B, 0.88)
 
     local versionText = titleBar:CreateFontString(nil, "OVERLAY")
-    versionText:SetFont(FONT, 10, "")
-    versionText:SetPoint("LEFT", titleText, "RIGHT", 8, -1)
+    versionText:SetFont(FONT, 9, "")
+    versionText:SetPoint("LEFT", subtitle, "RIGHT", 8, 0)
     versionText:SetTextColor(unpack(T.textDim))
-    versionText:SetText("v3.1.1")
+    local addonVersion = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata("TomoCastbar", "Version")
+    versionText:SetText(addonVersion and ("v" .. addonVersion) or "")
 
     -- =====================================
     -- CLOSE BUTTON (×) — extrême droite
@@ -791,18 +805,18 @@ local function CreateConfigFrame()
         edgeFile = "Interface\\Buttons\\WHITE8X8",
         edgeSize = 1,
     })
-    rlBtn:SetBackdropColor(0.10, 0.08, 0.04, 0.85)
-    rlBtn:SetBackdropBorderColor(0.60, 0.42, 0.08, 0.75)
+    rlBtn:SetBackdropColor(0.035, 0.045, 0.080, 0.96)
+    rlBtn:SetBackdropBorderColor(VIOLET_R, VIOLET_G, VIOLET_B, 0.65)
 
     local rlTxt = rlBtn:CreateFontString(nil, "OVERLAY")
     rlTxt:SetFont(FONT, 11, "")
     rlTxt:SetPoint("CENTER")
     rlTxt:SetText(L["layout_btn_reload"] or "RL")
-    rlTxt:SetTextColor(0.85, 0.65, 0.20)
+    rlTxt:SetTextColor(0.74, 0.66, 1.00)
 
     rlBtn:SetScript("OnEnter", function()
-        rlBtn:SetBackdropBorderColor(1, 0.80, 0.25, 1)
-        rlTxt:SetTextColor(1, 0.90, 0.40)
+        rlBtn:SetBackdropBorderColor(ACCENT_R, ACCENT_G, ACCENT_B, 1)
+        rlTxt:SetTextColor(0.72, 0.92, 1.00)
         if GameTooltip then
             GameTooltip:SetOwner(rlBtn, "ANCHOR_BOTTOM")
             GameTooltip:SetText(L["btn_reload_ui"] or "Reload UI", 1, 1, 1)
@@ -810,8 +824,8 @@ local function CreateConfigFrame()
         end
     end)
     rlBtn:SetScript("OnLeave", function()
-        rlBtn:SetBackdropBorderColor(0.60, 0.42, 0.08, 0.75)
-        rlTxt:SetTextColor(0.85, 0.65, 0.20)
+        rlBtn:SetBackdropBorderColor(VIOLET_R, VIOLET_G, VIOLET_B, 0.65)
+        rlTxt:SetTextColor(0.74, 0.66, 1.00)
         if GameTooltip then GameTooltip:Hide() end
     end)
     rlBtn:SetScript("OnClick", function() ReloadUI() end)
@@ -828,8 +842,8 @@ local function CreateConfigFrame()
         edgeSize = 1,
     })
     -- Style initial (inactif)
-    layoutBtn:SetBackdropColor(0.06, 0.06, 0.09, 0.85)
-    layoutBtn:SetBackdropBorderColor(0.22, 0.22, 0.26, 0.8)
+    layoutBtn:SetBackdropColor(T.bgMid[1], T.bgMid[2], T.bgMid[3], 0.96)
+    layoutBtn:SetBackdropBorderColor(unpack(T.border))
 
     -- Dot décoratif
     local layoutDot = layoutBtn:CreateTexture(nil, "OVERLAY")
@@ -880,7 +894,7 @@ local function CreateConfigFrame()
     -- =====================================
     -- SIDEBAR
     -- =====================================
-    local sidebarWidth = 140
+    local sidebarWidth = 176
 
     local sidebar = CreateFrame("Frame", nil, configFrame)
     sidebar:SetPoint("TOPLEFT",  0, -(TITLE_H + 1))
@@ -889,7 +903,7 @@ local function CreateConfigFrame()
 
     local sidebarBg = sidebar:CreateTexture(nil, "BACKGROUND")
     sidebarBg:SetAllPoints()
-    sidebarBg:SetColorTexture(0.06, 0.06, 0.08, 1)
+    sidebarBg:SetColorTexture(0.012, 0.018, 0.038, 1)
 
     local sidebarSep = configFrame:CreateTexture(nil, "ARTWORK")
     sidebarSep:SetWidth(1)
@@ -897,11 +911,24 @@ local function CreateConfigFrame()
     sidebarSep:SetPoint("BOTTOMLEFT", sidebarWidth, 0)
     sidebarSep:SetColorTexture(unpack(T.border))
 
+    -- Arcane Pulse brand signature — intentionally subtle so navigation stays primary.
+    local sidebarLogo = sidebar:CreateTexture(nil, "ARTWORK")
+    sidebarLogo:SetSize(82, 82)
+    sidebarLogo:SetPoint("BOTTOM", sidebar, "BOTTOM", 0, 42)
+    sidebarLogo:SetTexture("Interface\\AddOns\\TomoCastbar\\Assets\\Textures\\TCB_Icon")
+    sidebarLogo:SetAlpha(0.72)
+
+    local brandLabel = sidebar:CreateFontString(nil, "OVERLAY")
+    brandLabel:SetFont(FONT_BOLD, 9, "")
+    brandLabel:SetPoint("TOP", sidebarLogo, "BOTTOM", 0, -2)
+    brandLabel:SetText("TOMOCASTBAR")
+    brandLabel:SetTextColor(ACCENT_R, ACCENT_G, ACCENT_B, 0.72)
+
     -- Category buttons
     for i, cat in ipairs(categories) do
         local btn = CreateFrame("Button", nil, sidebar)
-        btn:SetSize(sidebarWidth, 36)
-        btn:SetPoint("TOPLEFT", 0, -(i - 1) * 36 - 8)
+        btn:SetSize(sidebarWidth - 12, 42)
+        btn:SetPoint("TOPLEFT", 6, -(i - 1) * 46 - 12)
 
         local btnBg = btn:CreateTexture(nil, "BACKGROUND")
         btnBg:SetAllPoints()
@@ -909,28 +936,28 @@ local function CreateConfigFrame()
         btn.bg = btnBg
 
         local indicator = btn:CreateTexture(nil, "OVERLAY")
-        indicator:SetSize(3, 24)
-        indicator:SetPoint("LEFT", 0, 0)
+        indicator:SetSize(3, 26)
+        indicator:SetPoint("LEFT", 1, 0)
         indicator:SetColorTexture(unpack(T.accent))
         indicator:Hide()
         btn.indicator = indicator
 
         local icon = btn:CreateFontString(nil, "OVERLAY")
-        icon:SetFont(FONT, 13, "")
+        icon:SetFont(FONT_BOLD, 10, "")
         icon:SetPoint("LEFT", 14, 0)
         icon:SetText(cat.icon)
         icon:SetTextColor(unpack(T.textDim))
         btn.icon = icon
 
         local label = btn:CreateFontString(nil, "OVERLAY")
-        label:SetFont(FONT, 12, "")
-        label:SetPoint("LEFT", icon, "RIGHT", 8, 0)
+        label:SetFont(FONT_BOLD, 11, "")
+        label:SetPoint("LEFT", 42, 0)
         label:SetText(cat.label)
         label:SetTextColor(unpack(T.textDim))
         btn.label = label
 
         btn:SetScript("OnEnter", function()
-            if currentCategory ~= cat.key then btnBg:SetColorTexture(0.12, 0.12, 0.15, 1) end
+            if currentCategory ~= cat.key then btnBg:SetColorTexture(0.045, 0.070, 0.125, 0.96) end
         end)
         btn:SetScript("OnLeave", function()
             if currentCategory ~= cat.key then btnBg:SetColorTexture(0, 0, 0, 0) end
@@ -944,8 +971,8 @@ local function CreateConfigFrame()
     -- CONTENT AREA
     -- =====================================
     local content = CreateFrame("Frame", nil, configFrame)
-    content:SetPoint("TOPLEFT",  sidebarWidth + 1, -(TITLE_H + 1))
-    content:SetPoint("BOTTOMRIGHT", 0, 0)
+    content:SetPoint("TOPLEFT",  sidebarWidth + 9, -(TITLE_H + 9))
+    content:SetPoint("BOTTOMRIGHT", -8, 8)
     configFrame.content = content
 
     -- =====================================
@@ -953,13 +980,13 @@ local function CreateConfigFrame()
     -- =====================================
     local footerSep = configFrame:CreateTexture(nil, "ARTWORK")
     footerSep:SetHeight(1)
-    footerSep:SetPoint("BOTTOMLEFT",  sidebarWidth + 1, 32)
-    footerSep:SetPoint("BOTTOMRIGHT", 0, 32)
+    footerSep:SetPoint("BOTTOMLEFT",  sidebarWidth + 9, 34)
+    footerSep:SetPoint("BOTTOMRIGHT", -8, 34)
     footerSep:SetColorTexture(unpack(T.separator))
 
     local footerText = configFrame:CreateFontString(nil, "OVERLAY")
     footerText:SetFont(FONT, 9, "")
-    footerText:SetPoint("BOTTOMRIGHT", -12, 10)
+    footerText:SetPoint("BOTTOMRIGHT", -18, 13)
     footerText:SetTextColor(unpack(T.textDim))
     footerText:SetText(L["CONFIG_FOOTER"])
 end
@@ -975,7 +1002,7 @@ function C.SwitchCategory(key)
 
     for catKey, btn in pairs(categoryButtons) do
         if catKey == key then
-            btn.bg:SetColorTexture(0.10, 0.10, 0.13, 1)
+            btn.bg:SetColorTexture(0.042, 0.068, 0.122, 1)
             btn.indicator:Show()
             btn.icon:SetTextColor(unpack(T.accent))
             btn.label:SetTextColor(unpack(T.text))
@@ -1011,7 +1038,7 @@ end
 
 function C.Toggle()
     if not TomoCastbarDB then
-        print("|cffd1b559TomoCastbar|r " .. L["DB_NOT_INIT"])
+        print("|cff40C7FFTomoCastbar|r " .. L["DB_NOT_INIT"])
         return
     end
 

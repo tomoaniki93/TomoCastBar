@@ -1,5 +1,16 @@
 # TomoCastbar — Changelog
 
+## [3.2.0] — 2026-09-11 — Arcane Pulse
+
+- Full **Arcane Pulse** visual redesign: deep navy glass, ice cyan and electric violet.
+- New large configuration shell with stronger hierarchy, roomier navigation and clearer active states.
+- New final TCB branding/icon used by addon metadata, the configuration title bar and a subtle sidebar signature.
+- Castbars gain a subtle glass sheen, energy edge, stronger timer contrast and refined icon spacing.
+- Channel/Empower markers, latency overlay, GCD spark and layout mode visuals now share one coherent palette.
+- Default colors refreshed for new installs/profiles; existing user-selected cast colors remain respected.
+- Config version label now reads addon metadata instead of a hard-coded version string.
+- Base: user-provided TomoCastbar 3.1.3 package for Retail 12.1.0.
+
 ---
 
 ## [3.1.1] — 2026-06-05

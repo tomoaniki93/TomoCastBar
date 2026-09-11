@@ -35,14 +35,14 @@ TomoCastbar_Defaults = {
     sparkTailAlpha = 0.6,      -- intensité des queues
 
     -- [ANIM] Couleurs du spark (r/g/b)
-    sparkColor     = { r = 1.0, g = 0.85, b = 0.5  },  -- tête : doré
-    sparkGlowColor = { r = 0.8, g = 0.6,  b = 1.0  },  -- halo : violet
-    sparkTailColor = { r = 1.0, g = 0.7,  b = 0.3  },  -- queue : orange
+    sparkColor     = { r = 0.92, g = 0.98, b = 1.00 },  -- tête : blanc glacé
+    sparkGlowColor = { r = 0.52, g = 0.32, b = 1.00 },  -- halo : violet électrique
+    sparkTailColor = { r = 0.25, g = 0.78, b = 1.00 },  -- queue : cyan
 
     -- Couleurs de barre
-    castbarColor          = { r = 0.80, g = 0.10, b = 0.10 },
-    castbarNIColor        = { r = 0.50, g = 0.50, b = 0.50 },
-    castbarInterruptColor = { r = 0.10, g = 0.80, b = 0.10 },
+    castbarColor          = { r = 0.20, g = 0.66, b = 0.98 },
+    castbarNIColor        = { r = 0.38, g = 0.34, b = 0.52 },
+    castbarInterruptColor = { r = 0.28, g = 0.92, b = 0.62 },
 
     -- Options avancées
     timerFormat     = "remaining",  -- "remaining" | "remaining_total" | "elapsed"
@@ -58,7 +58,7 @@ TomoCastbar_Defaults = {
     -- [v3.0] GCD Spark (joueur uniquement)
     showGCDSpark = true,
     gcdHeight    = 4,
-    gcdColor     = { r = 1.0, g = 1.0, b = 1.0 },
+    gcdColor     = { r = 0.58, g = 0.86, b = 1.0 },
 
     -- [v3.0] Couleur par école de magie (joueur uniquement)
     useSchoolColor = false,
@@ -75,7 +75,7 @@ TomoCastbar_Defaults = {
     -- [v3.0] Interrupt Feedback (texte centre écran)
     showInterruptFeedback    = true,
     interruptFeedbackDuration = 1.5,
-    interruptFeedbackColor   = { r = 0.10, g = 0.80, b = 0.10 },
+    interruptFeedbackColor   = { r = 0.30, g = 0.95, b = 0.68 },
     interruptFeedbackFontSize = 28,
 
     -- [v3.0] Profils (initialisés par TomoCastbar_Profiles.EnsureProfilesDB)
@@ -150,14 +150,14 @@ end
 function TomoCastbar_ResetDatabase()
     TomoCastbarDB = CopyTable(TomoCastbar_Defaults)
     local L = TomoCastbar_L
-    print("|cffd1b559TomoCastbar|r " .. L["DB_RESET"])
+    print("|cff40C7FFTomoCastbar|r " .. L["DB_RESET"])
 end
 
 function TomoCastbar_ResetUnit(unitKey)
     if TomoCastbar_Defaults[unitKey] then
         TomoCastbarDB[unitKey] = CopyTable(TomoCastbar_Defaults[unitKey])
         local L = TomoCastbar_L
-        print("|cffd1b559TomoCastbar|r " .. string.format(L["UNIT_RESET"], unitKey))
+        print("|cff40C7FFTomoCastbar|r " .. string.format(L["UNIT_RESET"], unitKey))
     end
 end
 

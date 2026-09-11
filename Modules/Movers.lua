@@ -29,13 +29,13 @@ local initialized = false
 -- =====================================
 
 local FONT         = TomoCastbar_DB and TomoCastbar_DB.font or "Fonts\\FRIZQT__.TTF"
-local ACCENT       = { 0.82, 0.71, 0.35 }   -- gold
-local BG           = { 0.04, 0.04, 0.06, 0.94 }
-local BORDER       = { 0.25, 0.24, 0.22, 1 }
-local MOVER_ACCENT = { 0.82, 0.71, 0.35 }
-local MOVER_BG     = { 0.04, 0.05, 0.05, 0.88 }
-local MOVER_BORDER = { 0.65, 0.55, 0.25, 1 }
-local COORD_COLOR  = { 0.45, 0.45, 0.45 }
+local ACCENT       = { 0.25, 0.78, 1.00 }   -- cyan
+local BG           = { 0.014, 0.020, 0.041, 0.96 }
+local BORDER       = { 0.12, 0.18, 0.30, 1 }
+local MOVER_ACCENT = { 0.25, 0.78, 1.00 }
+local MOVER_BG     = { 0.020, 0.032, 0.060, 0.90 }
+local MOVER_BORDER = { 0.12, 0.37, 0.58, 1 }
+local COORD_COLOR  = { 0.55, 0.64, 0.76 }
 
 -- Icônes embarquées (textures ASCII pour ne pas dépendre d'assets externes)
 local ICON_LAYOUT = "Interface\\AddOns\\TomoCastbar\\Assets\\Textures\\background"
