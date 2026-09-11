@@ -4,6 +4,8 @@ TomoCastbar is a standalone castbar addon for World of Warcraft Retail. It repla
 
 ## 3.2.0 — Arcane Pulse
 
+![WoW](https://img.shields.io/badge/WoW-Midnight-blue?style=for-the-badge) ![Interface](https://img.shields.io/badge/Interface-120100-orange?style=for-the-badge)
+
 Version 3.2.0 refreshes the complete visual language while preserving the proven 3.1.3 feature set. The configuration panel now uses a larger, cleaner navigation shell with stronger active states and a visible scrollbar. Castbars use a low-noise glass treatment, ice-cyan information accents and electric-violet highlights designed to stay readable in Mythic+, raid and PvP combat.
 
 ### Main features
